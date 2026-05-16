@@ -60,6 +60,12 @@ export default function DocumentPage() {
     ydocRef.current = ydoc
     const ytext = ydoc.getText('quill')
     new QuillBinding(ytext, quill)
+// Load saved content from database
+api.get('/documents/' + id).then(res => {
+  if (res.data.content && res.data.content.trim() && ytext.length === 0) {
+    ytext.insert(0, res.data.content)
+  }
+})
     const cleanToken = token ? token.replace(/\/.*$/, '') : ''
     const wsBase = import.meta.env.VITE_WS_URL || 'ws://127.0.0.1:8000'
 const wsUrl = wsBase + '/ws/collab/' + id + '?token=' + cleanToken
