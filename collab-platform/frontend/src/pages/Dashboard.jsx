@@ -84,7 +84,7 @@ export default function Dashboard() {
 
         <div style={{ marginTop: 8 }}>
           <p style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.1em', padding: '0 8px', marginBottom: 4 }}>WORKSPACE</p>
-          <div style={{ padding: '8px 10px', borderRadius: 'var(--radius-sm)', fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, background: 'var(--accent-dim)' }}>📄 All Documents</div><div style={{ padding: '8px 10px', borderRadius: 'var(--radius-sm)', fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }} onClick={() => navigate('/memories')}>🖼️ Memories</div><div style={{ padding: '8px 10px', borderRadius: 'var(--radius-sm)', fontSize: 13, color: 'var(--text-sec</div><div style={{ padding: '8px 10px', borderRadius: 'var(--radius-sm)', fontSize: 13, color: 'var(--text-sec</div><div style={{ padding: '8px 10px', borderRadius: 'var(--radius-sm)', fontSize: 13, color: 'var(--text-sec</div><div style={{ padding: '8px 10px', borderRadius: 'var(--radius-sm)', fontSize: 13, color: 'var(--text-sec</div><div style={{ padding: '8px 10px', borderRadius: 'var(--radius-sm)', fontSize: 13, color: 'var(--text-sec</div><div style={{ padding: '8px 10px', borderRadius: 'var(--radius-sm)', fontSize: 13, color: 'var(--text-sec</div><div style={{ padding: '8px 10px', borderRadius: 'var(--radius-sm)', fontSize: 13, color: 'var(--text-sec</div><div style={{ padding: '8px 10px', borderRadius: 'var(--radius-sm)', fontSize: 13, color: 'var(--text-sec</div>
+          <div style={{ padding: '8px 10px', borderRadius: 'var(--radius-sm)', fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, background: 'var(--accent-dim)' }}>📄 All Documents</div>
         </div>
 
         <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: 10, padding: '12px 8px', borderTop: '1px solid var(--border)' }}>
@@ -107,7 +107,7 @@ export default function Dashboard() {
             <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>{documents.length} document{documents.length !== 1 ? 's' : ''}</p>
           </div>
           <button style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '10px 18px', cursor: 'pointer', fontSize: 14, fontWeight: 500, fontFamily: 'Outfit, sans-serif' }} onClick={createDocument} disabled={creating}>
-           + New Document</button><button style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '10px 18px', cursor: 'pointer', fontSize: 14, fontWeight: 500, fontFamily: 'Outfit, sans-serif' }} onClick={() => { const code = window.prompt('Enter 6-digit room code:'); if (code) { api.get('/documents/join/' + code.toUpperCase()).then(res => navigate('/document/' + res.data.document_id)).catch(() => alert('Invalid code!')) } }}>🔗 Join with Code
+            + New Document
           </button>
         </div>
 
