@@ -206,7 +206,7 @@ const styles = {
   cardMeta: { fontSize: 12, color: 'var(--text-muted)', marginBottom: 12, lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' },
   cardFooter: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
   cardDate: { fontSize: 11, color: 'var(--text-muted)' },
-  deleteBtn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, opacity: 0.5, padding: 2 },
+  deleteBtn: { background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, opacity: 1, padding: 2 },
   emptyState: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, gap: 12, textAlign: 'center' },
   emptyIcon: { fontSize: 56, marginBottom: 8 },
   emptyTitle: { fontSize: 20, fontWeight: 600 },
