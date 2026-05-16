@@ -65,7 +65,7 @@ api.get('/documents/' + id).then(res => {
   if (res.data.content && res.data.content.trim() && ytext.length === 0) {
     ytext.insert(0, res.data.content)
   }
-})
+}
     const cleanToken = token ? token.replace(/\/.*$/, '') : ''
     const wsBase = import.meta.env.VITE_WS_URL || 'ws://127.0.0.1:8000'
 const wsUrl = wsBase + '/ws/collab/' + id + '?token=' + cleanToken
@@ -164,7 +164,7 @@ const wsUrl = wsBase + '/ws/collab/' + id + '?token=' + cleanToken
             {onlineUsers.length > 0 && <span style={{ fontSize: 12, color: 'var(--text-secondary)', marginLeft: 8 }}>{onlineUsers.length} online</span>}
           </div>
           <button style={{ background: 'var(--accent-dim)', color: 'var(--accent-light)', border: '1px solid rgba(124,106,255,0.3)', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif' }} onClick={() => setAiOpen(!aiOpen)}>AI Assistant</button>
-          <button style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif' }} onClick={() => { navigator.clipboard.writeText(window.location.href); alert('Link copied!') }}>Share</button>
+          <button style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif' }} onClick={() => { api.post('/documents/' + id + '/generate-code').then(res => { navigator.clipboard.writeText(res.data.code); alert('Room code: ' + res.data.code + '\n\nCode copied to clipboard! Share it with your collaborator.') }).catch(() => alert('Failed to generate code')) }}>🔑 Get Room Code</button>
         </div>
       </header>
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>

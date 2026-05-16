@@ -44,7 +44,23 @@ def save_content(doc_id: str, req: SaveContentRequest, user: User = Depends(get_
 def delete(doc_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     document_service.delete_document(doc_id, user, db)
     return {"message": "Deleted"}
+@router.post("/{doc_id}/generate-code")
+def generate_code(doc_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    import random, string
+    doc = db.query(Document).filter(Document.id == doc_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+    doc.share_token = code
+    db.commit()
+    return {"code": code}
 
+@router.get("/join/{code}")
+def join_by_code(code: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    doc = db.query(Document).filter(Document.share_token == code).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Invalid code")
+    return {"document_id": str(doc.id), "title": doc.title}
 
 @router.post("/{doc_id}/share")
 def share(doc_id: str, req: ShareRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):

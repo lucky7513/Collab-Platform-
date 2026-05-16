@@ -107,7 +107,7 @@ export default function Dashboard() {
             <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>{documents.length} document{documents.length !== 1 ? 's' : ''}</p>
           </div>
           <button style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '10px 18px', cursor: 'pointer', fontSize: 14, fontWeight: 500, fontFamily: 'Outfit, sans-serif' }} onClick={createDocument} disabled={creating}>
-            + New Document
+           + New Document</button><button style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '10px 18px', cursor: 'pointer', fontSize: 14, fontWeight: 500, fontFamily: 'Outfit, sans-serif' }} onClick={() => { const code = window.prompt('Enter 6-digit room code:'); if (code) { api.get('/documents/join/' + code.toUpperCase()).then(res => navigate('/document/' + res.data.document_id)).catch(() => alert('Invalid code!')) } }}>🔗 Join with Code
           </button>
         </div>
 
