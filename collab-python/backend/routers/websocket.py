@@ -32,22 +32,6 @@ async def _broadcast(document_id: str, payload: dict, exclude: WebSocket = None)
 
 
 def _extract_token(websocket: WebSocket) -> str:
-<<<<<<< HEAD
-    try:
-        full_url = str(websocket.url)
-        print("Full WS URL:", full_url)
-        if 'token=' not in full_url:
-            return None
-        token_part = full_url.split('token=')[1]
-        dot_parts = token_part.split('.')
-        if len(dot_parts) >= 3:
-            third = dot_parts[2].split('/')[0].split('&')[0]
-            token = dot_parts[0] + '.' + dot_parts[1] + '.' + third
-            print("Extracted token:", token[:20], "...")
-            return token
-    except Exception as e:
-        print("Token extraction error:", e)
-=======
     """Extract token from query string, handling y-websocket's appended room name."""
     try:
         query = str(websocket.url.query)
@@ -59,26 +43,15 @@ def _extract_token(websocket: WebSocket) -> str:
                 return token
     except Exception:
         pass
->>>>>>> 4a7c6333f502c497bda1b34a40c0fccdee606aae
     return None
 
 
 async def collab_ws_endpoint(websocket: WebSocket, document_id: str):
     token = _extract_token(websocket)
-<<<<<<< HEAD
-    print("Token extracted:", token[:20] if token else None)
-
-    try:
-        email = decode_token(token)
-        print("Email decoded:", email)
-    except Exception as e:
-        print("Token decode error:", e)
-=======
 
     try:
         email = decode_token(token)
     except Exception:
->>>>>>> 4a7c6333f502c497bda1b34a40c0fccdee606aae
         await websocket.close(code=4001)
         return
 
@@ -97,11 +70,6 @@ async def collab_ws_endpoint(websocket: WebSocket, document_id: str):
         "email": email,
     }
 
-<<<<<<< HEAD
-    print(f"User {email} joined document {document_id}")
-
-=======
->>>>>>> 4a7c6333f502c497bda1b34a40c0fccdee606aae
     await _broadcast(document_id, {
         "type": "user-joined",
         "userName": user_name,
@@ -136,10 +104,6 @@ async def collab_ws_endpoint(websocket: WebSocket, document_id: str):
     finally:
         rooms.get(document_id, set()).discard(websocket)
         session_info.pop(websocket, None)
-<<<<<<< HEAD
-        print(f"User {email} left document {document_id}")
-=======
->>>>>>> 4a7c6333f502c497bda1b34a40c0fccdee606aae
 
         if rooms.get(document_id):
             await _broadcast(document_id, {
@@ -148,8 +112,4 @@ async def collab_ws_endpoint(websocket: WebSocket, document_id: str):
                 "userCount": len(rooms.get(document_id, set())),
             })
         elif document_id in rooms:
-<<<<<<< HEAD
-          del rooms[document_id]
-=======
             del rooms[document_id]
->>>>>>> 4a7c6333f502c497bda1b34a40c0fccdee606aae
