@@ -39,6 +39,7 @@ export default function DocumentPage() {
 
   useEffect(() => {
     if (!editorRef.current || quillRef.current) return
+
     const quill = new Quill(editorRef.current, {
       modules: {
         toolbar: [
@@ -55,25 +56,33 @@ export default function DocumentPage() {
       placeholder: 'Start writing...',
       theme: 'snow',
     })
+
     quillRef.current = quill
+
     const ydoc = new Y.Doc()
     ydocRef.current = ydoc
     const ytext = ydoc.getText('quill')
     new QuillBinding(ytext, quill)
-// Load saved content from database
-api.get('/documents/' + id).then(res => {
-  if (res.data.content && res.data.content.trim() && ytext.length === 0) {
-    ytext.insert(0, res.data.content)
-  }
-}
-  const cleanToken = token ? token.replace(/\/.*$/, '') : ''
-    const wsBase = import.meta.env.VITE_WS_URL || 'ws://127.0.0.1:8000'
-const wsUrl = wsBase + '/ws/collab/' + id + '?token=' + cleanToken
+
+    // Load saved content from database
+    api.get('/documents/' + id).then(res => {
+      if (res.data.content && res.data.content.trim() && ytext.length === 0) {
+        ytext.insert(0, res.data.content)
+      }
+    })  // ← FIXED: was missing closing ) here
+
+    // WebSocket connection
+    const cleanToken = token ? token.replace(/\/.*$/, '') : ''
+    const wsBase = import.meta.env.VITE_WS_URL || 'wss://collab-platform-62rd.onrender.com'
+    const wsUrl = wsBase + '/ws/collab/' + id + '?token=' + cleanToken
     console.log('Connecting to:', wsUrl)
+
     const connectWS = () => {
       const ws = new WebSocket(wsUrl)
       wsRef.current = ws
+
       ws.onopen = () => { console.log('WS connected!'); setConnected(true) }
+
       ws.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data)
@@ -86,10 +95,13 @@ const wsUrl = wsBase + '/ws/collab/' + id + '?token=' + cleanToken
           }
         } catch (e) { console.error('WS message error:', e) }
       }
+
       ws.onclose = () => { console.log('WS closed, reconnecting...'); setConnected(false); setTimeout(connectWS, 2000) }
       ws.onerror = (e) => console.error('WS error:', e)
     }
+
     connectWS()
+
     ydoc.on('update', (update, origin) => {
       if (origin === 'remote') return
       const ws = wsRef.current
@@ -98,6 +110,7 @@ const wsUrl = wsBase + '/ws/collab/' + id + '?token=' + cleanToken
         ws.send(JSON.stringify({ type: 'doc-update', update: encoded }))
       }
     })
+
     quill.on('text-change', (delta, oldDelta, source) => {
       if (source !== 'user') return
       setSaveStatus('unsaved')
@@ -109,6 +122,7 @@ const wsUrl = wsBase + '/ws/collab/' + id + '?token=' + cleanToken
           .catch(() => setSaveStatus('unsaved'))
       }, 2000)
     })
+
     return () => {
       if (wsRef.current) wsRef.current.close()
       ydoc.destroy()
@@ -152,7 +166,7 @@ const wsUrl = wsBase + '/ws/collab/' + id + '?token=' + cleanToken
             <h1 style={{ fontSize: 16, fontWeight: 600, cursor: 'pointer', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} onClick={() => setEditingTitle(true)}>{title || 'Untitled Document'}</h1>
           )}
           <span style={{ fontSize: 12, color: saveStatusColor }}>{saveStatus === 'saved' ? 'Saved' : saveStatus === 'saving' ? 'Saving...' : 'Unsaved'}</span>
-          <span style={{ fontSize: 11, color: connected ? '#2ecc71' : '#e74c3c' }}>{connected ? 'â— Live' : 'â—‹ Connecting...'}</span>
+          <span style={{ fontSize: 11, color: connected ? '#2ecc71' : '#e74c3c' }}>{connected ? '● Live' : '○ Connecting...'}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -164,13 +178,15 @@ const wsUrl = wsBase + '/ws/collab/' + id + '?token=' + cleanToken
             {onlineUsers.length > 0 && <span style={{ fontSize: 12, color: 'var(--text-secondary)', marginLeft: 8 }}>{onlineUsers.length} online</span>}
           </div>
           <button style={{ background: 'var(--accent-dim)', color: 'var(--accent-light)', border: '1px solid rgba(124,106,255,0.3)', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif' }} onClick={() => setAiOpen(!aiOpen)}>AI Assistant</button>
-          <button style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif' }} onClick={() => { api.post('/documents/' + id + '/generate-code').then(res => { navigator.clipboard.writeText(res.data.code); alert('Room code: ' + res.data.code + '\n\nCode copied to clipboard! Share it with your collaborator.') }).catch(() => alert('Failed to generate code')) }}>ðŸ”‘ Get Room Code</button>
+          <button style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif' }} onClick={() => { api.post('/documents/' + id + '/generate-code').then(res => { navigator.clipboard.writeText(res.data.code); alert('Room code: ' + res.data.code + '\n\nCode copied to clipboard! Share it with your collaborator.') }).catch(() => alert('Failed to generate code')) }}>🔑 Get Room Code</button>
         </div>
       </header>
+
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
           <div ref={editorRef} />
         </div>
+
         {aiOpen && (
           <aside style={{ width: 300, background: 'var(--bg-secondary)', borderLeft: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 12, padding: 16, overflow: 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
