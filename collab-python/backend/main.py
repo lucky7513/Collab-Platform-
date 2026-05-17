@@ -12,6 +12,7 @@ app = FastAPI(title="Collab Platform API", version="1.0.1")
 
 origins = [
     "https://collab-platform-umber.vercel.app",
+    "https://vercel.com",
     "http://localhost:5173",
     "http://localhost:3000",
 ]
@@ -20,20 +21,21 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
-@app.middleware("http")
-async def add_cors_header(request: Request, call_next):
-    response = await call_next(request)
-    origin = request.headers.get("origin", "")
-    if origin in origins:
-        response.headers["Access-Control-Allow-Origin"] = origin
-        response.headers["Access-Control-Allow-Credentials"] = "true"
-        response.headers["Access-Control-Allow-Methods"] = "*"
-        response.headers["Access-Control-Allow-Headers"] = "*"
-    return response
+@app.options("/{rest_of_path:path}")
+async def preflight_handler(request: Request, rest_of_path: str):
+    return JSONResponse(
+        content={},
+        headers={
+            "Access-Control-Allow-Origin": request.headers.get("origin", "*"),
+            "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+            "Access-Control-Allow-Credentials": "true",
+        }
+    )
 
 app.include_router(auth.router)
 app.include_router(documents.router)
