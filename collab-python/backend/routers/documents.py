@@ -51,20 +51,7 @@ def generate_code(doc_id: str, user: User = Depends(get_current_user), db: Sessi
     return {"code": code}
 
 @router.get("/join/{code}")
-def @router.get("/join/{code}")
 def join_by_code(code: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    doc = db.query(Document).filter(Document.share_token == code).first()
-    if not doc:
-        raise HTTPException(status_code=404, detail="Invalid code")
-    
-    # Add permission for joining user if not already there
-    from models.permission import Permission, RoleEnum
-    existing = db.query(Permission).filter_by(document_id=doc.id, user_id=user.id).first()
-    if not existing:
-        db.add(Permission(document_id=doc.id, user_id=user.id, role=RoleEnum.EDITOR))
-        db.commit()
-    
-    return {"document_id": str(doc.id), "title": doc.title}(code: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     doc = db.query(Document).filter(Document.share_token == code).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Invalid code")
