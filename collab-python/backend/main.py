@@ -7,7 +7,7 @@ from routers.websocket import collab_ws_endpoint
 
 settings = get_settings()
 
-app = FastAPI(title="Collab Platform API", version="1.0.0")
+app = FastAPI(title="Collab Platform API", version="1.0.1")
 
 app.add_middleware(
     CORSMiddleware,
