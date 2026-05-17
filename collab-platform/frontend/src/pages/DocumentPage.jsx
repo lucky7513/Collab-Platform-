@@ -66,7 +66,7 @@ api.get('/documents/' + id).then(res => {
     ytext.insert(0, res.data.content)
   }
 }
-    const cleanToken = token ? token.split('/')[0] : ''
+  const cleanToken = token ? token.replace(/\/.*$/, '') : ''
     const wsBase = import.meta.env.VITE_WS_URL || 'ws://127.0.0.1:8000'
 const wsUrl = wsBase + '/ws/collab/' + id + '?token=' + cleanToken
     console.log('Connecting to:', wsUrl)
