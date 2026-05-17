@@ -10,27 +10,21 @@ settings = get_settings()
 
 app = FastAPI(title="Collab Platform API", version="1.0.1")
 
-ALLOWED_ORIGIN = "https://collab-platform-umber.vercel.app"
-
 @app.middleware("http")
 async def cors_middleware(request: Request, call_next):
-    origin = request.headers.get("origin", "")
-    
     if request.method == "OPTIONS":
         return Response(
             status_code=200,
             headers={
-                "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
-                "Access-Control-Allow-Credentials": "true",
+                "Access-Control-Allow-Origin": "*",
                 "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-                "Access-Control-Allow-Headers": "Content-Type, Authorization",
+                "Access-Control-Allow-Headers": "*",
             }
         )
-    
     response = await call_next(request)
-    if origin == ALLOWED_ORIGIN or not origin:
-        response.headers["Access-Control-Allow-Origin"] = ALLOWED_ORIGIN
-        response.headers["Access-Control-Allow-Credentials"] = "true"
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "*"
     return response
 
 app.include_router(auth.router)
