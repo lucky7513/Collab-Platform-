@@ -4,6 +4,7 @@ from db.database import get_db
 from core.deps import get_current_user
 from models.user import User
 from models.document import Document
+from models.permission import Permission, RoleEnum
 from schemas.schemas import DocumentOut, UpdateTitleRequest, SaveContentRequest, ShareRequest
 from services import document_service
 from typing import List
@@ -21,6 +22,17 @@ def create(user: User = Depends(get_current_user), db: Session = Depends(get_db)
 @router.get("/shared/{token}", response_model=DocumentOut)
 def get_shared(token: str, db: Session = Depends(get_db)):
     return document_service.get_by_share_token(token, db)
+
+@router.get("/join/{code}")
+def join_by_code(code: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    doc = db.query(Document).filter(Document.share_token == code).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Invalid code")
+    existing = db.query(Permission).filter_by(document_id=doc.id, user_id=user.id).first()
+    if not existing:
+        db.add(Permission(document_id=doc.id, user_id=user.id, role=RoleEnum.EDITOR))
+        db.commit()
+    return {"document_id": str(doc.id), "title": doc.title}
 
 @router.get("/{doc_id}", response_model=DocumentOut)
 def get_one(doc_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -49,13 +61,6 @@ def generate_code(doc_id: str, user: User = Depends(get_current_user), db: Sessi
     doc.share_token = code
     db.commit()
     return {"code": code}
-
-@router.get("/join/{code}")
-def join_by_code(code: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    doc = db.query(Document).filter(Document.share_token == code).first()
-    if not doc:
-        raise HTTPException(status_code=404, detail="Invalid code")
-    return {"document_id": str(doc.id), "title": doc.title}
 
 @router.post("/{doc_id}/share")
 def share(doc_id: str, req: ShareRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
