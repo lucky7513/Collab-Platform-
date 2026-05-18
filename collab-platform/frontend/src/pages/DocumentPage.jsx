@@ -1,4 +1,6 @@
-﻿import { useEffect, useRef, useState } from 'react'
+﻿javascript
+
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import Quill from 'quill'
 import QuillCursors from 'quill-cursors'
@@ -36,7 +38,9 @@ export default function DocumentPage() {
   const [chatMessages, setChatMessages] = useState([])
   const [chatInput, setChatInput] = useState('')
   const [unreadCount, setUnreadCount] = useState(0)
-  const [myUserName, setMyUserName] = useState('')
+  const [myRole, setMyRole] = useState('OWNER') // OWNER, EDITOR, VIEWER
+
+  const isViewer = myRole === 'VIEWER'
 
   const showToast = (message, type = 'join') => {
     const toastId = Date.now()
@@ -48,6 +52,10 @@ export default function DocumentPage() {
     api.get('/documents/' + id)
       .then(res => setTitle(res.data.title))
       .catch(() => navigate('/dashboard'))
+    // Fetch user's role for this document
+    api.get('/documents/' + id + '/my-role')
+      .then(res => setMyRole(res.data.role))
+      .catch(() => {})
   }, [id])
 
   useEffect(() => {
@@ -167,11 +175,17 @@ export default function DocumentPage() {
     }
   }, [id, token])
 
+  // Disable editor for viewers
+  useEffect(() => {
+    if (quillRef.current && isViewer) {
+      quillRef.current.disable()
+    }
+  }, [isViewer, quillRef.current])
+
   const sendChatMessage = () => {
     if (!chatInput.trim()) return
     const ws = wsRef.current
     if (!ws || ws.readyState !== WebSocket.OPEN) return
-    const userName = user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'You'
     ws.send(JSON.stringify({ type: 'chat-message', text: chatInput.trim() }))
     setChatMessages(prev => [...prev, {
       userName: 'You',
@@ -233,17 +247,21 @@ export default function DocumentPage() {
           to { opacity: 1; transform: translateX(0); }
         }
         .chat-input:focus { outline: none; border-color: var(--accent) !important; }
+        .ql-disabled .ql-editor { background: var(--bg-primary) !important; cursor: default !important; }
       `}</style>
 
       <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', height: 56, background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)', flexShrink: 0, gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, overflow: 'hidden' }}>
           <button style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif', padding: '4px 8px' }} onClick={() => navigate('/dashboard')}>Back</button>
-          {editingTitle ? (
+          {editingTitle && !isViewer ? (
             <input style={{ background: 'var(--bg-hover)', border: '1px solid var(--accent)', borderRadius: 6, color: 'var(--text-primary)', fontSize: 16, fontWeight: 600, padding: '4px 10px', fontFamily: 'Outfit, sans-serif', outline: 'none', flex: 1 }} value={title} onChange={e => setTitle(e.target.value)} onBlur={handleTitleBlur} onKeyDown={e => e.key === 'Enter' && handleTitleBlur()} autoFocus />
           ) : (
-            <h1 style={{ fontSize: 16, fontWeight: 600, cursor: 'pointer', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} onClick={() => setEditingTitle(true)}>{title || 'Untitled Document'}</h1>
+            <h1 style={{ fontSize: 16, fontWeight: 600, cursor: isViewer ? 'default' : 'pointer', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} onClick={() => !isViewer && setEditingTitle(true)}>{title || 'Untitled Document'}</h1>
           )}
-          <span style={{ fontSize: 12, color: saveStatusColor }}>{saveStatus === 'saved' ? 'Saved' : saveStatus === 'saving' ? 'Saving...' : 'Unsaved'}</span>
+          {isViewer && (
+            <span style={{ fontSize: 11, background: '#2e2a1a', color: '#f39c12', border: '1px solid #f39c12', borderRadius: 4, padding: '2px 8px' }}>👁 View Only</span>
+          )}
+          {!isViewer && <span style={{ fontSize: 12, color: saveStatusColor }}>{saveStatus === 'saved' ? 'Saved' : saveStatus === 'saving' ? 'Saving...' : 'Unsaved'}</span>}
           <span style={{ fontSize: 11, color: connected ? '#2ecc71' : '#e74c3c' }}>{connected ? '● Live' : '○ Connecting...'}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
@@ -256,7 +274,6 @@ export default function DocumentPage() {
             {onlineUsers.length > 0 && <span style={{ fontSize: 12, color: 'var(--text-secondary)', marginLeft: 8 }}>{onlineUsers.length} online</span>}
           </div>
 
-          {/* Chat Button */}
           <button style={{ position: 'relative', background: chatOpen ? 'var(--accent)' : 'var(--bg-hover)', color: chatOpen ? '#fff' : 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif' }}
             onClick={() => { setChatOpen(!chatOpen); setAiOpen(false); setUnreadCount(0) }}>
             💬 Chat
@@ -269,10 +286,22 @@ export default function DocumentPage() {
 
           <button style={{ background: 'var(--accent-dim)', color: 'var(--accent-light)', border: '1px solid rgba(124,106,255,0.3)', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif' }}
             onClick={() => { setAiOpen(!aiOpen); setChatOpen(false) }}>AI Assistant</button>
-          <button style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif' }}
-            onClick={() => { api.post('/documents/' + id + '/generate-code').then(res => { navigator.clipboard.writeText(res.data.code); alert('Room code: ' + res.data.code + '\n\nCode copied to clipboard!') }).catch(() => alert('Failed to generate code')) }}>
-            🔑 Get Room Code
-          </button>
+
+          {myRole === 'OWNER' && (
+            <button style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif' }}
+              onClick={() => {
+                api.post('/documents/' + id + '/generate-code').then(res => {
+                  alert(
+                    '🔑 Editor Code: ' + res.data.editor_code +
+                    '\n👁 Viewer Code: ' + res.data.viewer_code +
+                    '\n\nEditor code copied to clipboard!'
+                  )
+                  navigator.clipboard.writeText(res.data.editor_code)
+                }).catch(() => alert('Failed to generate code'))
+              }}>
+              🔑 Get Room Code
+            </button>
+          )}
         </div>
       </header>
 
@@ -288,8 +317,6 @@ export default function DocumentPage() {
               <span style={{ fontWeight: 700, fontSize: 14 }}>💬 Live Chat</span>
               <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 14 }} onClick={() => setChatOpen(false)}>✕</button>
             </div>
-
-            {/* Messages */}
             <div style={{ flex: 1, overflow: 'auto', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
               {chatMessages.length === 0 && (
                 <p style={{ color: 'var(--text-muted)', fontSize: 12, textAlign: 'center', marginTop: 24 }}>No messages yet. Say hi! 👋</p>
@@ -304,8 +331,7 @@ export default function DocumentPage() {
                     color: msg.isMe ? '#fff' : 'var(--text-primary)',
                     border: msg.isMe ? 'none' : '1px solid var(--border)',
                     borderRadius: msg.isMe ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
-                    padding: '8px 12px', fontSize: 13, maxWidth: '85%', lineHeight: 1.4,
-                    wordBreak: 'break-word',
+                    padding: '8px 12px', fontSize: 13, maxWidth: '85%', lineHeight: 1.4, wordBreak: 'break-word',
                   }}>
                     {msg.text}
                   </div>
@@ -314,20 +340,15 @@ export default function DocumentPage() {
               ))}
               <div ref={chatEndRef} />
             </div>
-
-            {/* Input */}
             <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', display: 'flex', gap: 8 }}>
-              <input
-                className="chat-input"
+              <input className="chat-input"
                 style={{ flex: 1, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 13, padding: '8px 12px', fontFamily: 'Outfit, sans-serif' }}
                 placeholder="Type a message..."
                 value={chatInput}
                 onChange={e => setChatInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && sendChatMessage()}
               />
-              <button style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', fontSize: 16 }} onClick={sendChatMessage}>
-                ➤
-              </button>
+              <button style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', fontSize: 16 }} onClick={sendChatMessage}>➤</button>
             </div>
           </aside>
         )}
