@@ -136,8 +136,9 @@ export default function Dashboard() {
                   <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12, lineHeight: 1.5, overflow: 'hidden' }}>{doc.content ? doc.content.substring(0, 80) + '...' : 'Empty document'}</p>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{formatDate(doc.updatedAt)}</span>
-                    <button style={{ background: '#e74c3c', border: 'none', borderRadius: 4, color: '#fff', cursor: 'pointer', padding: '4px 10px', fontSize: 11, fontWeight: 600, fontFamily: 'Outfit, sans-serif' }} onClick={(e) => deleteDocument(e, doc.id)}>Delete</button>
-                  </div>
+                    {user && doc.owner_email === user.email && (
+  <button style={{ background: '#e74c3c', border: 'none', borderRadius: 4, color: '#fff', cursor: 'pointer', padding: '4px 10px', fontSize: 11, fontWeight: 600, fontFamily: 'Outfit, sans-serif' }} onClick={(e) => deleteDocument(e, doc.id)}>Delete</button>
+)}                  </div>
                 </div>
               </div>
             ))}
