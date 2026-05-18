@@ -291,12 +291,9 @@ export default function DocumentPage() {
             <button style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif' }}
               onClick={() => {
                 api.post('/documents/' + id + '/generate-code').then(res => {
-                  alert(
-                    '🔑 Editor Code: ' + res.data.editor_code +
-                    '\n👁 Viewer Code: ' + res.data.viewer_code +
-                    '\n\nEditor code copied to clipboard!'
-                  )
-                  navigator.clipboard.writeText(res.data.editor_code)
+                  const choice = window.prompt('🔑 Editor Code: ' + res.data.editor_code + '\n👁 Viewer Code: ' + res.data.viewer_code + '\n\nType "editor" or "viewer" to copy that code:')
+                  if (choice && choice.toLowerCase() === 'viewer') { navigator.clipboard.writeText(res.data.viewer_code); alert('👁 Viewer code copied!') }
+                  else if (choice && choice.toLowerCase() === 'editor') { navigator.clipboard.writeText(res.data.editor_code); alert('🔑 Editor code copied!') }
                 }).catch(() => alert('Failed to generate code'))
               }}>
               🔑 Get Room Code
