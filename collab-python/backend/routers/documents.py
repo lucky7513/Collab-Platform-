@@ -46,6 +46,19 @@ def update_title(doc_id: str, req: UpdateTitleRequest, user: User = Depends(get_
 def save_content(doc_id: str, req: SaveContentRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     return document_service.save_content(doc_id, req.content, user, db)
 
+@router.delete("/{doc_id}/leave")
+def leave_document(doc_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    doc = db.query(Document).filter(Document.id == doc_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    if doc.owner_id == user.id:
+        raise HTTPException(status_code=400, detail="Owner cannot leave, only delete")
+    perm = db.query(Permission).filter_by(document_id=doc.id, user_id=user.id).first()
+    if perm:
+        db.delete(perm)
+        db.commit()
+    return {"message": "Left document"}
+
 @router.delete("/{doc_id}")
 def delete(doc_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     document_service.delete_document(doc_id, user, db)

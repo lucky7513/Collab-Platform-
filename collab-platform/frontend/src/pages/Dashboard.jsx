@@ -37,12 +37,23 @@ export default function Dashboard() {
 
   const deleteDocument = async (e, id) => {
     e.stopPropagation()
-    if (!window.confirm('Delete this document?')) return
+    if (!window.confirm('Delete this document permanently?')) return
     try {
       await api.delete('/documents/' + id)
       setDocuments(docs => docs.filter(d => d.id !== id))
     } catch (err) {
       console.error('Failed to delete:', err)
+    }
+  }
+
+  const leaveDocument = async (e, id) => {
+    e.stopPropagation()
+    if (!window.confirm('Leave this document? You will lose access.')) return
+    try {
+      await api.delete('/documents/' + id + '/leave')
+      setDocuments(docs => docs.filter(d => d.id !== id))
+    } catch (err) {
+      console.error('Failed to leave:', err)
     }
   }
 
@@ -75,6 +86,8 @@ export default function Dashboard() {
     } catch { return 'Just now' }
   }
 
+  const isOwner = (doc) => user && doc.owner_email === user.email
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-primary)' }}>
       <aside style={{ width: 240, background: 'var(--bg-secondary)', borderRight: '1px solid var(--border)', padding: '24px 16px', display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
@@ -98,16 +111,17 @@ export default function Dashboard() {
           </div>
         </div>
         <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: 10, padding: '12px 8px', borderTop: '1px solid var(--border)' }}>
-          <div style={{ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0, background: user && user.avatarColor ? user.avatarColor : 'var(--accent)' }}>
+          <div style={{ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0, background: user && user.avatarColor ? user.avatarColor : 'var(--accent)', color: '#fff' }}>
             {getInitials(user && user.name ? user.name : '')}
           </div>
           <div style={{ flex: 1, overflow: 'hidden' }}>
             <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user && user.name ? user.name : ''}</p>
             <p style={{ fontSize: 11, color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user && user.email ? user.email : ''}</p>
           </div>
-          <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16, padding: 4 }} onClick={logout}>out</button>
+          <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 13, padding: 4, fontFamily: 'Outfit, sans-serif' }} onClick={logout}>Logout</button>
         </div>
       </aside>
+
       <main style={{ flex: 1, padding: '40px 48px', overflow: 'auto' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32 }}>
           <div>
@@ -118,6 +132,7 @@ export default function Dashboard() {
             + New Document
           </button>
         </div>
+
         {loading ? (
           <p style={{ color: 'var(--text-secondary)' }}>Loading...</p>
         ) : documents.length === 0 ? (
@@ -132,13 +147,19 @@ export default function Dashboard() {
               <div key={doc.id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: 20, cursor: 'pointer', display: 'flex', gap: 14 }} onClick={() => navigate('/document/' + doc.id)}>
                 <div style={{ fontSize: 28, flexShrink: 0 }}>📄</div>
                 <div style={{ flex: 1, overflow: 'hidden' }}>
-                  <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{doc.title ? doc.title : 'Untitled Document'}</h3>
+                  <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{doc.title ? doc.title : 'Untitled Document'}</h3>
+                  {!isOwner(doc) && (
+                    <p style={{ fontSize: 11, color: 'var(--accent-light)', marginBottom: 4 }}>Shared by {doc.owner_name}</p>
+                  )}
                   <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12, lineHeight: 1.5, overflow: 'hidden' }}>{doc.content ? doc.content.substring(0, 80) + '...' : 'Empty document'}</p>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{formatDate(doc.updatedAt)}</span>
-                    {user && doc.owner_email === user.email && (
-  <button style={{ background: '#e74c3c', border: 'none', borderRadius: 4, color: '#fff', cursor: 'pointer', padding: '4px 10px', fontSize: 11, fontWeight: 600, fontFamily: 'Outfit, sans-serif' }} onClick={(e) => deleteDocument(e, doc.id)}>Delete</button>
-)}                  </div>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{formatDate(doc.updated_at)}</span>
+                    {isOwner(doc) ? (
+                      <button style={{ background: '#e74c3c', border: 'none', borderRadius: 4, color: '#fff', cursor: 'pointer', padding: '4px 10px', fontSize: 11, fontWeight: 600, fontFamily: 'Outfit, sans-serif' }} onClick={(e) => deleteDocument(e, doc.id)}>Delete</button>
+                    ) : (
+                      <button style={{ background: '#7c6aff', border: 'none', borderRadius: 4, color: '#fff', cursor: 'pointer', padding: '4px 10px', fontSize: 11, fontWeight: 600, fontFamily: 'Outfit, sans-serif' }} onClick={(e) => leaveDocument(e, doc.id)}>Leave</button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
