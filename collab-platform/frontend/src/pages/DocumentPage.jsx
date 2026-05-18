@@ -30,6 +30,13 @@ export default function DocumentPage() {
   const [aiLoading, setAiLoading] = useState(false)
   const [aiResult, setAiResult] = useState('')
   const [copied, setCopied] = useState(false)
+  const [toasts, setToasts] = useState([])
+
+  const showToast = (message, type = 'join') => {
+    const toastId = Date.now()
+    setToasts(prev => [...prev, { id: toastId, message, type }])
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== toastId)), 3000)
+  }
 
   useEffect(() => {
     api.get('/documents/' + id)
@@ -64,18 +71,15 @@ export default function DocumentPage() {
     const ytext = ydoc.getText('quill')
     new QuillBinding(ytext, quill)
 
-    // Load saved content from database
     api.get('/documents/' + id).then(res => {
       if (res.data.content && res.data.content.trim() && ytext.length === 0) {
         ytext.insert(0, res.data.content)
       }
-    })  // ← FIXED: was missing closing ) here
+    })
 
-    // WebSocket connection
     const cleanToken = token ? token.replace(/\/.*$/, '') : ''
     const wsBase = import.meta.env.VITE_WS_URL || 'wss://collab-platform-62rd.onrender.com'
     const wsUrl = wsBase + '/ws/collab/' + id + '?token=' + cleanToken
-    console.log('Connecting to:', wsUrl)
 
     const connectWS = () => {
       const ws = new WebSocket(wsUrl)
@@ -86,10 +90,15 @@ export default function DocumentPage() {
       ws.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data)
-          if (msg.type === 'room-state') setOnlineUsers(msg.users || [])
-          else if (msg.type === 'user-joined') setOnlineUsers(prev => [...prev, { userName: msg.userName, userColor: msg.userColor }])
-          else if (msg.type === 'user-left') setOnlineUsers(prev => prev.filter(u => u.userName !== msg.userName))
-          else if (msg.type === 'doc-update' && msg.update) {
+          if (msg.type === 'room-state') {
+            setOnlineUsers(msg.users || [])
+          } else if (msg.type === 'user-joined') {
+            setOnlineUsers(prev => [...prev, { userName: msg.userName, userColor: msg.userColor }])
+            showToast(msg.userName + ' joined the document 🟢', 'join')
+          } else if (msg.type === 'user-left') {
+            setOnlineUsers(prev => prev.filter(u => u.userName !== msg.userName))
+            showToast(msg.userName + ' left the document 🔴', 'leave')
+          } else if (msg.type === 'doc-update' && msg.update) {
             const update = Uint8Array.from(atob(msg.update), c => c.charCodeAt(0))
             Y.applyUpdate(ydoc, update)
           }
@@ -157,6 +166,35 @@ export default function DocumentPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg-primary)' }}>
+
+      {/* Toast Notifications */}
+      <div style={{ position: 'fixed', top: 70, right: 20, zIndex: 9999, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {toasts.map(toast => (
+          <div key={toast.id} style={{
+            background: toast.type === 'join' ? '#1a2e1a' : '#2e1a1a',
+            border: `1px solid ${toast.type === 'join' ? '#2ecc71' : '#e74c3c'}`,
+            color: toast.type === 'join' ? '#2ecc71' : '#e74c3c',
+            padding: '10px 16px',
+            borderRadius: 8,
+            fontSize: 13,
+            fontWeight: 500,
+            fontFamily: 'Outfit, sans-serif',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            animation: 'slideIn 0.3s ease',
+            minWidth: 220,
+          }}>
+            {toast.message}
+          </div>
+        ))}
+      </div>
+
+      <style>{`
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateX(40px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+      `}</style>
+
       <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', height: 56, background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)', flexShrink: 0, gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, overflow: 'hidden' }}>
           <button style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif', padding: '4px 8px' }} onClick={() => navigate('/dashboard')}>Back</button>
