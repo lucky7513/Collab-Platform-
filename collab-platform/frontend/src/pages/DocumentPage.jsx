@@ -290,10 +290,11 @@ export default function DocumentPage() {
           {myRole === 'OWNER' && (
             <button style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif' }}
               onClick={() => {
-                api.post('/documents/' + id + '/generate-code').then(res => {
-                  const choice = window.prompt('🔑 Editor Code: ' + res.data.editor_code + '\n👁 Viewer Code: ' + res.data.viewer_code + '\n\nType "editor" or "viewer" to copy that code:')
-                  if (choice && choice.toLowerCase() === 'viewer') { navigator.clipboard.writeText(res.data.viewer_code); alert('👁 Viewer code copied!') }
-                  else if (choice && choice.toLowerCase() === 'editor') { navigator.clipboard.writeText(res.data.editor_code); alert('🔑 Editor code copied!') }
+               api.post('/documents/' + id + '/generate-code').then(res => {
+                  const ec = res.data.editor_code; const vc = res.data.viewer_code
+                  const choice = window.confirm('🔑 Editor Code: ' + ec + '\n👁 Viewer Code: ' + vc + '\n\nClick OK to copy Editor code, Cancel to copy Viewer code')
+                  if (choice) { navigator.clipboard.writeText(ec); alert('🔑 Editor code copied!') }
+                  else { navigator.clipboard.writeText(vc); alert('👁 Viewer code copied!') }
                 }).catch(() => alert('Failed to generate code'))
               }}>
               🔑 Get Room Code
