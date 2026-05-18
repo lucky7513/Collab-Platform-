@@ -37,7 +37,8 @@ export default function DocumentPage() {
   const [toasts, setToasts] = useState([])
   const [chatMessages, setChatMessages] = useState([])
   const [chatInput, setChatInput] = useState('')
-  const [unreadCount, setUnreadCount] = useState(0)
+const [unreadCount, setUnreadCount] = useState(0)
+const [codeModal, setCodeModal] = useState(null)
   const [myRole, setMyRole] = useState('OWNER') // OWNER, EDITOR, VIEWER
 
   const isViewer = myRole === 'VIEWER'
@@ -290,13 +291,9 @@ export default function DocumentPage() {
           {myRole === 'OWNER' && (
             <button style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif' }}
               onClick={() => {
-               api.post('/documents/' + id + '/generate-code').then(res => {
-                  const ec = res.data.editor_code; const vc = res.data.viewer_code
-                  const choice = window.confirm('🔑 Editor Code: ' + ec + '\n👁 Viewer Code: ' + vc + '\n\nClick OK to copy Editor code, Cancel to copy Viewer code')
-                  if (choice) { navigator.clipboard.writeText(ec); alert('🔑 Editor code copied!') }
-                  else { navigator.clipboard.writeText(vc); alert('👁 Viewer code copied!') }
-                }).catch(() => alert('Failed to generate code'))
-              }}>
+               api.post('/documents/' + id + '/generate-code')
+  .then(res => setCodeModal(res.data))
+  .catch(() => alert('Failed to generate code'))              }}>
               🔑 Get Room Code
             </button>
           )}
@@ -377,6 +374,30 @@ export default function DocumentPage() {
           </aside>
         )}
       </div>
+{codeModal && (
+  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 12, padding: 24, width: 340, display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>🔑 Share Document</h3>
+      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <p style={{ margin: 0, fontSize: 11, color: 'var(--text-muted)' }}>EDITOR CODE</p>
+          <p style={{ margin: 0, fontSize: 20, fontWeight: 700, letterSpacing: 3 }}>{codeModal.editor_code}</p>
+          <p style={{ margin: 0, fontSize: 11, color: 'var(--text-muted)' }}>Can edit the document</p>
+        </div>
+        <button style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: 'Outfit, sans-serif' }} onClick={() => { navigator.clipboard.writeText(codeModal.editor_code); alert('🔑 Editor code copied!') }}>Copy</button>
+      </div>
+      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <p style={{ margin: 0, fontSize: 11, color: 'var(--text-muted)' }}>VIEWER CODE</p>
+          <p style={{ margin: 0, fontSize: 20, fontWeight: 700, letterSpacing: 3 }}>{codeModal.viewer_code}</p>
+          <p style={{ margin: 0, fontSize: 11, color: 'var(--text-muted)' }}>Can only read the document</p>
+        </div>
+        <button style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, padding: '8px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: 'Outfit, sans-serif' }} onClick={() => { navigator.clipboard.writeText(codeModal.viewer_code); alert('👁 Viewer code copied!') }}>Copy</button>
+      </div>
+      <button style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 6, padding: '8px', cursor: 'pointer', color: 'var(--text-muted)', fontFamily: 'Outfit, sans-serif', fontSize: 13 }} onClick={() => setCodeModal(null)}>Close</button>
+    </div>
+  </div>
+)}
     </div>
   )
 }
