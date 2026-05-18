@@ -20,6 +20,7 @@ export default function DocumentPage() {
   const ydocRef = useRef(null)
   const wsRef = useRef(null)
   const saveTimerRef = useRef(null)
+  const chatEndRef = useRef(null)
 
   const [title, setTitle] = useState('Untitled Document')
   const [editingTitle, setEditingTitle] = useState(false)
@@ -27,10 +28,15 @@ export default function DocumentPage() {
   const [saveStatus, setSaveStatus] = useState('saved')
   const [connected, setConnected] = useState(false)
   const [aiOpen, setAiOpen] = useState(false)
+  const [chatOpen, setChatOpen] = useState(false)
   const [aiLoading, setAiLoading] = useState(false)
   const [aiResult, setAiResult] = useState('')
   const [copied, setCopied] = useState(false)
   const [toasts, setToasts] = useState([])
+  const [chatMessages, setChatMessages] = useState([])
+  const [chatInput, setChatInput] = useState('')
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [myUserName, setMyUserName] = useState('')
 
   const showToast = (message, type = 'join') => {
     const toastId = Date.now()
@@ -43,6 +49,17 @@ export default function DocumentPage() {
       .then(res => setTitle(res.data.title))
       .catch(() => navigate('/dashboard'))
   }, [id])
+
+  useEffect(() => {
+    if (chatOpen) {
+      setUnreadCount(0)
+      setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
+    }
+  }, [chatOpen])
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [chatMessages])
 
   useEffect(() => {
     if (!editorRef.current || quillRef.current) return
@@ -101,6 +118,17 @@ export default function DocumentPage() {
           } else if (msg.type === 'doc-update' && msg.update) {
             const update = Uint8Array.from(atob(msg.update), c => c.charCodeAt(0))
             Y.applyUpdate(ydoc, update)
+          } else if (msg.type === 'chat-message') {
+            setChatMessages(prev => [...prev, {
+              userName: msg.userName,
+              userColor: msg.userColor,
+              text: msg.text,
+              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            }])
+            setChatOpen(prev => {
+              if (!prev) setUnreadCount(c => c + 1)
+              return prev
+            })
           }
         } catch (e) { console.error('WS message error:', e) }
       }
@@ -139,6 +167,22 @@ export default function DocumentPage() {
     }
   }, [id, token])
 
+  const sendChatMessage = () => {
+    if (!chatInput.trim()) return
+    const ws = wsRef.current
+    if (!ws || ws.readyState !== WebSocket.OPEN) return
+    const userName = user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'You'
+    ws.send(JSON.stringify({ type: 'chat-message', text: chatInput.trim() }))
+    setChatMessages(prev => [...prev, {
+      userName: 'You',
+      userColor: '#7c6aff',
+      text: chatInput.trim(),
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isMe: true,
+    }])
+    setChatInput('')
+  }
+
   const handleTitleBlur = async () => {
     setEditingTitle(false)
     if (title.trim()) await api.patch('/documents/' + id + '/title', { title })
@@ -174,14 +218,9 @@ export default function DocumentPage() {
             background: toast.type === 'join' ? '#1a2e1a' : '#2e1a1a',
             border: `1px solid ${toast.type === 'join' ? '#2ecc71' : '#e74c3c'}`,
             color: toast.type === 'join' ? '#2ecc71' : '#e74c3c',
-            padding: '10px 16px',
-            borderRadius: 8,
-            fontSize: 13,
-            fontWeight: 500,
-            fontFamily: 'Outfit, sans-serif',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-            animation: 'slideIn 0.3s ease',
-            minWidth: 220,
+            padding: '10px 16px', borderRadius: 8, fontSize: 13, fontWeight: 500,
+            fontFamily: 'Outfit, sans-serif', boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            animation: 'slideIn 0.3s ease', minWidth: 220,
           }}>
             {toast.message}
           </div>
@@ -193,6 +232,7 @@ export default function DocumentPage() {
           from { opacity: 0; transform: translateX(40px); }
           to { opacity: 1; transform: translateX(0); }
         }
+        .chat-input:focus { outline: none; border-color: var(--accent) !important; }
       `}</style>
 
       <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', height: 56, background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)', flexShrink: 0, gap: 12 }}>
@@ -215,8 +255,24 @@ export default function DocumentPage() {
             ))}
             {onlineUsers.length > 0 && <span style={{ fontSize: 12, color: 'var(--text-secondary)', marginLeft: 8 }}>{onlineUsers.length} online</span>}
           </div>
-          <button style={{ background: 'var(--accent-dim)', color: 'var(--accent-light)', border: '1px solid rgba(124,106,255,0.3)', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif' }} onClick={() => setAiOpen(!aiOpen)}>AI Assistant</button>
-          <button style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif' }} onClick={() => { api.post('/documents/' + id + '/generate-code').then(res => { navigator.clipboard.writeText(res.data.code); alert('Room code: ' + res.data.code + '\n\nCode copied to clipboard! Share it with your collaborator.') }).catch(() => alert('Failed to generate code')) }}>🔑 Get Room Code</button>
+
+          {/* Chat Button */}
+          <button style={{ position: 'relative', background: chatOpen ? 'var(--accent)' : 'var(--bg-hover)', color: chatOpen ? '#fff' : 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif' }}
+            onClick={() => { setChatOpen(!chatOpen); setAiOpen(false); setUnreadCount(0) }}>
+            💬 Chat
+            {unreadCount > 0 && (
+              <span style={{ position: 'absolute', top: -6, right: -6, background: '#e74c3c', color: '#fff', borderRadius: '50%', width: 18, height: 18, fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {unreadCount}
+              </span>
+            )}
+          </button>
+
+          <button style={{ background: 'var(--accent-dim)', color: 'var(--accent-light)', border: '1px solid rgba(124,106,255,0.3)', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif' }}
+            onClick={() => { setAiOpen(!aiOpen); setChatOpen(false) }}>AI Assistant</button>
+          <button style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif' }}
+            onClick={() => { api.post('/documents/' + id + '/generate-code').then(res => { navigator.clipboard.writeText(res.data.code); alert('Room code: ' + res.data.code + '\n\nCode copied to clipboard!') }).catch(() => alert('Failed to generate code')) }}>
+            🔑 Get Room Code
+          </button>
         </div>
       </header>
 
@@ -225,11 +281,63 @@ export default function DocumentPage() {
           <div ref={editorRef} />
         </div>
 
+        {/* Chat Panel */}
+        {chatOpen && (
+          <aside style={{ width: 300, background: 'var(--bg-secondary)', borderLeft: '1px solid var(--border)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontWeight: 700, fontSize: 14 }}>💬 Live Chat</span>
+              <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 14 }} onClick={() => setChatOpen(false)}>✕</button>
+            </div>
+
+            {/* Messages */}
+            <div style={{ flex: 1, overflow: 'auto', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {chatMessages.length === 0 && (
+                <p style={{ color: 'var(--text-muted)', fontSize: 12, textAlign: 'center', marginTop: 24 }}>No messages yet. Say hi! 👋</p>
+              )}
+              {chatMessages.map((msg, i) => (
+                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: msg.isMe ? 'flex-end' : 'flex-start' }}>
+                  {!msg.isMe && (
+                    <span style={{ fontSize: 11, color: msg.userColor || '#7c6aff', fontWeight: 600, marginBottom: 3 }}>{msg.userName}</span>
+                  )}
+                  <div style={{
+                    background: msg.isMe ? 'var(--accent)' : 'var(--bg-card)',
+                    color: msg.isMe ? '#fff' : 'var(--text-primary)',
+                    border: msg.isMe ? 'none' : '1px solid var(--border)',
+                    borderRadius: msg.isMe ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
+                    padding: '8px 12px', fontSize: 13, maxWidth: '85%', lineHeight: 1.4,
+                    wordBreak: 'break-word',
+                  }}>
+                    {msg.text}
+                  </div>
+                  <span style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 3 }}>{msg.time}</span>
+                </div>
+              ))}
+              <div ref={chatEndRef} />
+            </div>
+
+            {/* Input */}
+            <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', display: 'flex', gap: 8 }}>
+              <input
+                className="chat-input"
+                style={{ flex: 1, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 13, padding: '8px 12px', fontFamily: 'Outfit, sans-serif' }}
+                placeholder="Type a message..."
+                value={chatInput}
+                onChange={e => setChatInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && sendChatMessage()}
+              />
+              <button style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', fontSize: 16 }} onClick={sendChatMessage}>
+                ➤
+              </button>
+            </div>
+          </aside>
+        )}
+
+        {/* AI Panel */}
         {aiOpen && (
           <aside style={{ width: 300, background: 'var(--bg-secondary)', borderLeft: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 12, padding: 16, overflow: 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span style={{ fontWeight: 700 }}>AI Assistant</span>
-              <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 14 }} onClick={() => setAiOpen(false)}>X</button>
+              <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 14 }} onClick={() => setAiOpen(false)}>✕</button>
             </div>
             <p style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Select text then choose an action:</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
