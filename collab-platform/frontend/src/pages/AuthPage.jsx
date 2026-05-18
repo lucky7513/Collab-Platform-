@@ -22,7 +22,16 @@ export default function AuthPage() {
       }
       navigate('/dashboard')
     } catch (err) {
-      setError(err || 'Something went wrong')
+      const msg = typeof err === 'string' ? err.toLowerCase() : ''
+if (msg.includes('invalid') || msg.includes('credentials') || msg.includes('password')) {
+  setError('Incorrect password. Please try again.')
+} else if (msg.includes('not found') || msg.includes('no account') || msg.includes('user')) {
+  setError('No account found with this email.')
+} else if (msg.includes('already') || msg.includes('registered') || msg.includes('exists')) {
+  setError('An account with this email already exists.')
+} else {
+  setError('Something went wrong. Please try again.')
+}
     } finally {
       setLoading(false)
     }
