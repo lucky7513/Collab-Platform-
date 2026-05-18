@@ -94,7 +94,7 @@ async def collab_ws_endpoint(websocket: WebSocket, document_id: str):
             payload = json.loads(data)
             msg_type = payload.get("type")
 
-            if msg_type in ("doc-update", "awareness"):
+            if msg_type in ("doc-update", "awareness", "chat-message"):
                 payload["userName"] = user_name
                 payload["userColor"] = user_color
                 await _broadcast(document_id, payload, exclude=websocket)
