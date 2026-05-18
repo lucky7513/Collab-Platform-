@@ -8,8 +8,12 @@ from models.permission import Permission, RoleEnum
 from schemas.schemas import DocumentOut, UpdateTitleRequest, SaveContentRequest, ShareRequest
 from services import document_service
 from typing import List
+import random, string
 
 router = APIRouter(prefix="/api/documents", tags=["documents"])
+
+def generate_code_str():
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
 @router.get("", response_model=List[DocumentOut])
 def get_all(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -26,13 +30,34 @@ def get_shared(token: str, db: Session = Depends(get_db)):
 @router.get("/join/{code}")
 def join_by_code(code: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     doc = db.query(Document).filter(Document.share_token == code).first()
-    if not doc:
-        raise HTTPException(status_code=404, detail="Invalid code")
+    if doc:
+        role = RoleEnum.EDITOR
+    else:
+        doc = db.query(Document).filter(Document.viewer_token == code).first()
+        if doc:
+            role = RoleEnum.VIEWER
+        else:
+            raise HTTPException(status_code=404, detail="Invalid code")
     existing = db.query(Permission).filter_by(document_id=doc.id, user_id=user.id).first()
-    if not existing:
-        db.add(Permission(document_id=doc.id, user_id=user.id, role=RoleEnum.EDITOR))
+    if existing:
+        existing.role = role
         db.commit()
-    return {"document_id": str(doc.id), "title": doc.title}
+    else:
+        db.add(Permission(document_id=doc.id, user_id=user.id, role=role))
+        db.commit()
+    return {"document_id": str(doc.id), "title": doc.title, "role": role.value}
+
+@router.get("/{doc_id}/my-role")
+def get_my_role(doc_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    doc = db.query(Document).filter(Document.id == doc_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    if doc.owner_id == user.id:
+        return {"role": "OWNER"}
+    perm = db.query(Permission).filter_by(document_id=doc.id, user_id=user.id).first()
+    if not perm:
+        raise HTTPException(status_code=403, detail="Access denied")
+    return {"role": perm.role.value}
 
 @router.get("/{doc_id}", response_model=DocumentOut)
 def get_one(doc_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -66,14 +91,17 @@ def delete(doc_id: str, user: User = Depends(get_current_user), db: Session = De
 
 @router.post("/{doc_id}/generate-code")
 def generate_code(doc_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    import random, string
     doc = db.query(Document).filter(Document.id == doc_id).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
-    code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
-    doc.share_token = code
+    if doc.owner_id != user.id:
+        raise HTTPException(status_code=403, detail="Only owner can generate codes")
+    editor_code = generate_code_str()
+    viewer_code = generate_code_str()
+    doc.share_token = editor_code
+    doc.viewer_token = viewer_code
     db.commit()
-    return {"code": code}
+    return {"editor_code": editor_code, "viewer_code": viewer_code}
 
 @router.post("/{doc_id}/share")
 def share(doc_id: str, req: ShareRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
