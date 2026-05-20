@@ -39,24 +39,6 @@
   --warning: #f39c12;
   --shadow: 0 4px 24px rgba(0,0,0,0.08);
 }
-  --bg-secondary: #111118;
-  --bg-card: #16161f;
-  --bg-hover: #1e1e2a;
-  --border: #2a2a3a;
-  --border-light: #1e1e2e;
-  --accent: #7c6aff;
-  --accent-light: #9d8fff;
-  --accent-dim: rgba(124, 106, 255, 0.15);
-  --text-primary: #f0f0f8;
-  --text-secondary: #8888aa;
-  --text-muted: #55556a;
-  --success: #2ecc71;
-  --danger: #e74c3c;
-  --warning: #f39c12;
-  --radius: 10px;
-  --radius-sm: 6px;
-  --shadow: 0 4px 24px rgba(0,0,0,0.4);
-}
 
 * {
   margin: 0;
@@ -127,6 +109,7 @@ body {
 @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 .fade-in { animation: fadeIn 0.3s ease forwards; }
 .slide-in { animation: slideIn 0.3s ease forwards; }
