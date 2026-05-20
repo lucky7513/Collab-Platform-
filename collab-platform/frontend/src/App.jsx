@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import useAuthStore from './store/authStore'
 import AuthPage from './pages/AuthPage'
@@ -17,6 +17,9 @@ export default function App() {
 
   useEffect(() => {
     initAuth()
+    // Apply saved theme on load
+    const savedTheme = localStorage.getItem('collab-theme') || 'dark'
+    document.documentElement.setAttribute('data-theme', savedTheme)
   }, [])
 
   return (

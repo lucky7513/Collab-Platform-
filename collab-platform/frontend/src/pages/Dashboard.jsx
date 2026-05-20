@@ -140,7 +140,15 @@ export default function Dashboard() {
             <p style={styles.userName}>{user?.name || ''}</p>
             <p style={styles.userEmail}>{user?.email || ''}</p>
           </div>
-          <button style={styles.logoutBtn} onClick={logout} title="Logout">⏻</button>
+          <button style={styles.logoutBtn} onClick={() => {
+  const current = document.documentElement.getAttribute('data-theme') || 'dark'
+  const next = current === 'dark' ? 'light' : 'dark'
+  document.documentElement.setAttribute('data-theme', next)
+  localStorage.setItem('collab-theme', next)
+}} title="Toggle theme">
+  {document.documentElement.getAttribute('data-theme') === 'light' ? '🌙' : '☀️'}
+</button>
+<button style={styles.logoutBtn} onClick={logout} title="Logout">⏻</button>
         </div>
       </aside>
 
