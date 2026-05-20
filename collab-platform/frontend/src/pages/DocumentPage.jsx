@@ -1,6 +1,4 @@
-﻿
-
-import { useEffect, useRef, useState } from 'react'
+﻿import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import Quill from 'quill'
 import QuillCursors from 'quill-cursors'
@@ -37,9 +35,9 @@ export default function DocumentPage() {
   const [toasts, setToasts] = useState([])
   const [chatMessages, setChatMessages] = useState([])
   const [chatInput, setChatInput] = useState('')
-const [unreadCount, setUnreadCount] = useState(0)
-const [codeModal, setCodeModal] = useState(null)
-  const [myRole, setMyRole] = useState('OWNER') // OWNER, EDITOR, VIEWER
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [codeModal, setCodeModal] = useState(null)
+  const [myRole, setMyRole] = useState('OWNER')
 
   const isViewer = myRole === 'VIEWER'
 
@@ -53,7 +51,6 @@ const [codeModal, setCodeModal] = useState(null)
     api.get('/documents/' + id)
       .then(res => setTitle(res.data.title))
       .catch(() => navigate('/dashboard'))
-    // Fetch user's role for this document
     api.get('/documents/' + id + '/my-role')
       .then(res => setMyRole(res.data.role))
       .catch(() => {})
@@ -110,9 +107,7 @@ const [codeModal, setCodeModal] = useState(null)
     const connectWS = () => {
       const ws = new WebSocket(wsUrl)
       wsRef.current = ws
-
-      ws.onopen = () => { console.log('WS connected!'); setConnected(true) }
-
+      ws.onopen = () => { setConnected(true) }
       ws.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data)
@@ -120,29 +115,23 @@ const [codeModal, setCodeModal] = useState(null)
             setOnlineUsers(msg.users || [])
           } else if (msg.type === 'user-joined') {
             setOnlineUsers(prev => [...prev, { userName: msg.userName, userColor: msg.userColor }])
-            showToast(msg.userName + ' joined the document 🟢', 'join')
+            showToast(msg.userName + ' joined 🟢', 'join')
           } else if (msg.type === 'user-left') {
             setOnlineUsers(prev => prev.filter(u => u.userName !== msg.userName))
-            showToast(msg.userName + ' left the document 🔴', 'leave')
+            showToast(msg.userName + ' left 🔴', 'leave')
           } else if (msg.type === 'doc-update' && msg.update) {
             const update = Uint8Array.from(atob(msg.update), c => c.charCodeAt(0))
             Y.applyUpdate(ydoc, update)
           } else if (msg.type === 'chat-message') {
             setChatMessages(prev => [...prev, {
-              userName: msg.userName,
-              userColor: msg.userColor,
-              text: msg.text,
+              userName: msg.userName, userColor: msg.userColor, text: msg.text,
               time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             }])
-            setChatOpen(prev => {
-              if (!prev) setUnreadCount(c => c + 1)
-              return prev
-            })
+            setChatOpen(prev => { if (!prev) setUnreadCount(c => c + 1); return prev })
           }
         } catch (e) { console.error('WS message error:', e) }
       }
-
-      ws.onclose = () => { console.log('WS closed, reconnecting...'); setConnected(false); setTimeout(connectWS, 2000) }
+      ws.onclose = () => { setConnected(false); setTimeout(connectWS, 2000) }
       ws.onerror = (e) => console.error('WS error:', e)
     }
 
@@ -176,11 +165,8 @@ const [codeModal, setCodeModal] = useState(null)
     }
   }, [id, token])
 
-  // Disable editor for viewers
   useEffect(() => {
-    if (quillRef.current && isViewer) {
-      quillRef.current.disable()
-    }
+    if (quillRef.current && isViewer) quillRef.current.disable()
   }, [isViewer, quillRef.current])
 
   const sendChatMessage = () => {
@@ -189,11 +175,8 @@ const [codeModal, setCodeModal] = useState(null)
     if (!ws || ws.readyState !== WebSocket.OPEN) return
     ws.send(JSON.stringify({ type: 'chat-message', text: chatInput.trim() }))
     setChatMessages(prev => [...prev, {
-      userName: 'You',
-      userColor: '#7c6aff',
-      text: chatInput.trim(),
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      isMe: true,
+      userName: 'You', userColor: '#7c6aff', text: chatInput.trim(),
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), isMe: true,
     }])
     setChatInput('')
   }
@@ -222,20 +205,21 @@ const [codeModal, setCodeModal] = useState(null)
   }
 
   const saveStatusColor = saveStatus === 'saved' ? '#2ecc71' : saveStatus === 'saving' ? '#f39c12' : '#e74c3c'
+  const saveStatusText = saveStatus === 'saved' ? '✓ Saved' : saveStatus === 'saving' ? '⟳ Saving...' : '● Unsaved'
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg-primary)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg-primary)', fontFamily: 'Outfit, sans-serif' }}>
 
       {/* Toast Notifications */}
       <div style={{ position: 'fixed', top: 70, right: 20, zIndex: 9999, display: 'flex', flexDirection: 'column', gap: 8 }}>
         {toasts.map(toast => (
           <div key={toast.id} style={{
-            background: toast.type === 'join' ? '#1a2e1a' : '#2e1a1a',
+            background: toast.type === 'join' ? '#0d1f0d' : '#1f0d0d',
             border: `1px solid ${toast.type === 'join' ? '#2ecc71' : '#e74c3c'}`,
             color: toast.type === 'join' ? '#2ecc71' : '#e74c3c',
-            padding: '10px 16px', borderRadius: 8, fontSize: 13, fontWeight: 500,
-            fontFamily: 'Outfit, sans-serif', boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-            animation: 'slideIn 0.3s ease', minWidth: 220,
+            padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 500,
+            boxShadow: '0 4px 16px rgba(0,0,0,0.4)', animation: 'slideIn 0.3s ease',
+            minWidth: 200, display: 'flex', alignItems: 'center', gap: 8,
           }}>
             {toast.message}
           </div>
@@ -243,90 +227,123 @@ const [codeModal, setCodeModal] = useState(null)
       </div>
 
       <style>{`
-        @keyframes slideIn {
-          from { opacity: 0; transform: translateX(40px); }
-          to { opacity: 1; transform: translateX(0); }
-        }
-        .chat-input:focus { outline: none; border-color: var(--accent) !important; }
-        .ql-disabled .ql-editor { background: var(--bg-primary) !important; cursor: default !important; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .chat-input:focus { outline: none; border-color: #7c6aff !important; box-shadow: 0 0 0 3px rgba(124,106,255,0.15) !important; }
+        .ql-toolbar { border: none !important; border-bottom: 1px solid var(--border) !important; background: var(--bg-secondary) !important; padding: 8px 16px !important; }
+        .ql-container { border: none !important; font-size: 15px !important; }
+        .ql-editor { padding: 32px 48px !important; min-height: calc(100vh - 120px) !important; line-height: 1.8 !important; color: var(--text-primary) !important; }
+        .ql-editor.ql-blank::before { color: var(--text-muted) !important; font-style: normal !important; }
+        .ql-disabled .ql-editor { background: transparent !important; cursor: default !important; }
+        .ai-action-btn:hover { background: rgba(124,106,255,0.15) !important; border-color: rgba(124,106,255,0.4) !important; }
+        .header-btn:hover { background: var(--bg-card) !important; }
       `}</style>
 
-      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', height: 56, background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)', flexShrink: 0, gap: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, overflow: 'hidden' }}>
-          <button style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif', padding: '4px 8px' }} onClick={() => navigate('/dashboard')}>Back</button>
+      {/* Header */}
+      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', height: 52, background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)', flexShrink: 0, gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, overflow: 'hidden' }}>
+          <button className="header-btn" style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 13, padding: '5px 10px', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 4 }} onClick={() => navigate('/dashboard')}>
+            ← Back
+          </button>
+          <div style={{ width: 1, height: 20, background: 'var(--border)' }} />
           {editingTitle && !isViewer ? (
-            <input style={{ background: 'var(--bg-hover)', border: '1px solid var(--accent)', borderRadius: 6, color: 'var(--text-primary)', fontSize: 16, fontWeight: 600, padding: '4px 10px', fontFamily: 'Outfit, sans-serif', outline: 'none', flex: 1 }} value={title} onChange={e => setTitle(e.target.value)} onBlur={handleTitleBlur} onKeyDown={e => e.key === 'Enter' && handleTitleBlur()} autoFocus />
+            <input style={{ background: 'var(--bg-hover)', border: '1px solid var(--accent)', borderRadius: 6, color: 'var(--text-primary)', fontSize: 15, fontWeight: 700, padding: '4px 10px', fontFamily: 'Outfit, sans-serif', outline: 'none', flex: 1, letterSpacing: '-0.3px' }}
+              value={title} onChange={e => setTitle(e.target.value)} onBlur={handleTitleBlur} onKeyDown={e => e.key === 'Enter' && handleTitleBlur()} autoFocus />
           ) : (
-            <h1 style={{ fontSize: 16, fontWeight: 600, cursor: isViewer ? 'default' : 'pointer', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} onClick={() => !isViewer && setEditingTitle(true)}>{title || 'Untitled Document'}</h1>
+            <h1 style={{ fontSize: 15, fontWeight: 700, cursor: isViewer ? 'default' : 'pointer', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '-0.3px' }}
+              onClick={() => !isViewer && setEditingTitle(true)}>
+              {title || 'Untitled Document'}
+            </h1>
           )}
-          {isViewer && (
-            <span style={{ fontSize: 11, background: '#2e2a1a', color: '#f39c12', border: '1px solid #f39c12', borderRadius: 4, padding: '2px 8px' }}>👁 View Only</span>
-          )}
-          {!isViewer && <span style={{ fontSize: 12, color: saveStatusColor }}>{saveStatus === 'saved' ? 'Saved' : saveStatus === 'saving' ? 'Saving...' : 'Unsaved'}</span>}
-          <span style={{ fontSize: 11, color: connected ? '#2ecc71' : '#e74c3c' }}>{connected ? '● Live' : '○ Connecting...'}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+            {isViewer && (
+              <span style={{ fontSize: 11, background: 'rgba(243,156,18,0.15)', color: '#f39c12', border: '1px solid rgba(243,156,18,0.3)', borderRadius: 6, padding: '2px 8px', fontWeight: 600 }}>👁 View Only</span>
+            )}
+            {!isViewer && (
+              <span style={{ fontSize: 11, color: saveStatusColor, fontWeight: 500 }}>{saveStatusText}</span>
+            )}
+            <span style={{ fontSize: 11, color: connected ? '#2ecc71' : '#e74c3c', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: connected ? '#2ecc71' : '#e74c3c', display: 'inline-block' }} />
+              {connected ? 'Live' : 'Offline'}
+            </span>
+          </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          {/* Online users */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            {onlineUsers.slice(0, 5).map((u, i) => (
-              <div key={i} title={u.userName} style={{ width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, border: '2px solid var(--bg-secondary)', color: '#fff', background: u.userColor || '#7c6aff', marginLeft: i > 0 ? -8 : 0 }}>
+            {onlineUsers.slice(0, 4).map((u, i) => (
+              <div key={i} title={u.userName} style={{ width: 26, height: 26, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, border: '2px solid var(--bg-secondary)', color: '#fff', background: u.userColor || '#7c6aff', marginLeft: i > 0 ? -6 : 0, boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
                 {u.userName ? u.userName[0].toUpperCase() : '?'}
               </div>
             ))}
-            {onlineUsers.length > 0 && <span style={{ fontSize: 12, color: 'var(--text-secondary)', marginLeft: 8 }}>{onlineUsers.length} online</span>}
+            {onlineUsers.length > 0 && <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 6 }}>{onlineUsers.length} online</span>}
           </div>
 
-          <button style={{ position: 'relative', background: chatOpen ? 'var(--accent)' : 'var(--bg-hover)', color: chatOpen ? '#fff' : 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif' }}
+          <div style={{ width: 1, height: 20, background: 'var(--border)' }} />
+
+          {/* Chat button */}
+          <button className="header-btn" style={{ position: 'relative', background: chatOpen ? 'rgba(124,106,255,0.2)' : 'none', color: chatOpen ? '#7c6aff' : 'var(--text-secondary)', border: chatOpen ? '1px solid rgba(124,106,255,0.3)' : '1px solid transparent', borderRadius: 7, padding: '5px 10px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif', fontWeight: 500, transition: 'all 0.15s' }}
             onClick={() => { setChatOpen(!chatOpen); setAiOpen(false); setUnreadCount(0) }}>
             💬 Chat
             {unreadCount > 0 && (
-              <span style={{ position: 'absolute', top: -6, right: -6, background: '#e74c3c', color: '#fff', borderRadius: '50%', width: 18, height: 18, fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ position: 'absolute', top: -5, right: -5, background: '#e74c3c', color: '#fff', borderRadius: '50%', width: 17, height: 17, fontSize: 9, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {unreadCount}
               </span>
             )}
           </button>
 
-          <button style={{ background: 'var(--accent-dim)', color: 'var(--accent-light)', border: '1px solid rgba(124,106,255,0.3)', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif' }}
-            onClick={() => { setAiOpen(!aiOpen); setChatOpen(false) }}>AI Assistant</button>
+          {/* AI button */}
+          <button className="header-btn" style={{ background: aiOpen ? 'rgba(124,106,255,0.2)' : 'none', color: aiOpen ? '#7c6aff' : 'var(--text-secondary)', border: aiOpen ? '1px solid rgba(124,106,255,0.3)' : '1px solid transparent', borderRadius: 7, padding: '5px 10px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif', fontWeight: 500, transition: 'all 0.15s' }}
+            onClick={() => { setAiOpen(!aiOpen); setChatOpen(false) }}>
+            🤖 AI
+          </button>
 
+          {/* Share button */}
           {myRole === 'OWNER' && (
-            <button style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif' }}
-              onClick={() => {
-               api.post('/documents/' + id + '/generate-code')
-  .then(res => setCodeModal(res.data))
-  .catch(() => alert('Failed to generate code'))              }}>
-              🔑 Get Room Code
+            <button style={{ background: 'linear-gradient(135deg, #7c6aff, #5b4de8)', color: '#fff', border: 'none', borderRadius: 7, padding: '5px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif', fontWeight: 600, boxShadow: '0 2px 8px rgba(124,106,255,0.3)' }}
+              onClick={() => api.post('/documents/' + id + '/generate-code').then(res => setCodeModal(res.data)).catch(() => alert('Failed to generate code'))}>
+              🔑 Share
             </button>
           )}
         </div>
       </header>
 
+      {/* Body */}
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        {/* Editor */}
         <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
-          <div ref={editorRef} />
+          <div ref={editorRef} style={{ flex: 1 }} />
         </div>
 
         {/* Chat Panel */}
         {chatOpen && (
-          <aside style={{ width: 300, background: 'var(--bg-secondary)', borderLeft: '1px solid var(--border)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontWeight: 700, fontSize: 14 }}>💬 Live Chat</span>
-              <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 14 }} onClick={() => setChatOpen(false)}>✕</button>
+          <aside style={{ width: 300, background: 'var(--bg-secondary)', borderLeft: '1px solid var(--border)', display: 'flex', flexDirection: 'column', overflow: 'hidden', flexShrink: 0 }}>
+            <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 16 }}>💬</span>
+                <span style={{ fontWeight: 700, fontSize: 14 }}>Live Chat</span>
+                {onlineUsers.length > 0 && <span style={{ fontSize: 10, background: 'rgba(46,204,113,0.15)', color: '#2ecc71', border: '1px solid rgba(46,204,113,0.3)', borderRadius: 10, padding: '1px 6px' }}>{onlineUsers.length} online</span>}
+              </div>
+              <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16, padding: 2 }} onClick={() => setChatOpen(false)}>✕</button>
             </div>
-            <div style={{ flex: 1, overflow: 'auto', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ flex: 1, overflow: 'auto', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
               {chatMessages.length === 0 && (
-                <p style={{ color: 'var(--text-muted)', fontSize: 12, textAlign: 'center', marginTop: 24 }}>No messages yet. Say hi! 👋</p>
+                <div style={{ textAlign: 'center', paddingTop: 32 }}>
+                  <div style={{ fontSize: 32, marginBottom: 8 }}>👋</div>
+                  <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>No messages yet. Say hi!</p>
+                </div>
               )}
               {chatMessages.map((msg, i) => (
                 <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: msg.isMe ? 'flex-end' : 'flex-start' }}>
-                  {!msg.isMe && (
-                    <span style={{ fontSize: 11, color: msg.userColor || '#7c6aff', fontWeight: 600, marginBottom: 3 }}>{msg.userName}</span>
-                  )}
+                  {!msg.isMe && <span style={{ fontSize: 11, color: msg.userColor || '#7c6aff', fontWeight: 700, marginBottom: 3 }}>{msg.userName}</span>}
                   <div style={{
-                    background: msg.isMe ? 'var(--accent)' : 'var(--bg-card)',
+                    background: msg.isMe ? 'linear-gradient(135deg, #7c6aff, #5b4de8)' : 'var(--bg-card)',
                     color: msg.isMe ? '#fff' : 'var(--text-primary)',
                     border: msg.isMe ? 'none' : '1px solid var(--border)',
                     borderRadius: msg.isMe ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
-                    padding: '8px 12px', fontSize: 13, maxWidth: '85%', lineHeight: 1.4, wordBreak: 'break-word',
+                    padding: '8px 12px', fontSize: 13, maxWidth: '85%', lineHeight: 1.5, wordBreak: 'break-word',
+                    boxShadow: msg.isMe ? '0 2px 8px rgba(124,106,255,0.3)' : 'none',
                   }}>
                     {msg.text}
                   </div>
@@ -335,69 +352,114 @@ const [codeModal, setCodeModal] = useState(null)
               ))}
               <div ref={chatEndRef} />
             </div>
-            <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', display: 'flex', gap: 8 }}>
+            <div style={{ padding: '12px 14px', borderTop: '1px solid var(--border)', display: 'flex', gap: 8 }}>
               <input className="chat-input"
-                style={{ flex: 1, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 13, padding: '8px 12px', fontFamily: 'Outfit, sans-serif' }}
+                style={{ flex: 1, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 13, padding: '8px 12px', fontFamily: 'Outfit, sans-serif', transition: 'all 0.2s' }}
                 placeholder="Type a message..."
                 value={chatInput}
                 onChange={e => setChatInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && sendChatMessage()}
               />
-              <button style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', fontSize: 16 }} onClick={sendChatMessage}>➤</button>
+              <button style={{ background: 'linear-gradient(135deg, #7c6aff, #5b4de8)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 13px', cursor: 'pointer', fontSize: 14, boxShadow: '0 2px 8px rgba(124,106,255,0.3)' }} onClick={sendChatMessage}>➤</button>
             </div>
           </aside>
         )}
 
         {/* AI Panel */}
         {aiOpen && (
-          <aside style={{ width: 300, background: 'var(--bg-secondary)', borderLeft: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 12, padding: 16, overflow: 'auto' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontWeight: 700 }}>AI Assistant</span>
-              <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 14 }} onClick={() => setAiOpen(false)}>✕</button>
-            </div>
-            <p style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Select text then choose an action:</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {[{id:'summarize',label:'Summarize'},{id:'rephrase',label:'Rephrase'},{id:'continue',label:'Continue'},{id:'grammar',label:'Fix Grammar'},{id:'shorten',label:'Shorten'},{id:'bullets',label:'Bulletize'}].map(action => (
-                <button key={action.id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 6, padding: '10px 12px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Outfit, sans-serif', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }} onClick={() => handleAI(action.id)} disabled={aiLoading}>{action.label}</button>
-              ))}
-            </div>
-            {aiLoading && <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>Thinking...</p>}
-            {aiResult && !aiLoading && (
-              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: 12 }}>
-                <div style={{ fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap', color: 'var(--text-primary)' }}>{aiResult}</div>
-                <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                  <button style={{ flex: 1, background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 6, padding: '8px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }} onClick={() => { const quill = quillRef.current; if (quill) { const sel = quill.getSelection() || { index: quill.getLength(), length: 0 }; quill.insertText(sel.index + sel.length, '\n' + aiResult) } }}>Insert</button>
-                  <button style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, padding: '8px 12px', fontSize: 12, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }} onClick={() => { navigator.clipboard.writeText(aiResult); setCopied(true); setTimeout(() => setCopied(false), 2000) }}>{copied ? 'Copied!' : 'Copy'}</button>
-                </div>
+          <aside style={{ width: 300, background: 'var(--bg-secondary)', borderLeft: '1px solid var(--border)', display: 'flex', flexDirection: 'column', overflow: 'hidden', flexShrink: 0 }}>
+            <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 16 }}>🤖</span>
+                <span style={{ fontWeight: 700, fontSize: 14 }}>AI Assistant</span>
               </div>
-            )}
+              <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16, padding: 2 }} onClick={() => setAiOpen(false)}>✕</button>
+            </div>
+            <div style={{ flex: 1, overflow: 'auto', padding: '14px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Select text in the editor, then choose an action:</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {[
+                  { id: 'summarize', label: '📋 Summarize', desc: 'Condense into key points' },
+                  { id: 'rephrase', label: '✏️ Rephrase', desc: 'Rewrite more clearly' },
+                  { id: 'continue', label: '➡️ Continue', desc: 'Generate next paragraph' },
+                  { id: 'grammar', label: '✓ Fix Grammar', desc: 'Correct errors' },
+                  { id: 'shorten', label: '✂️ Shorten', desc: 'Make it concise' },
+                  { id: 'bullets', label: '• Bulletize', desc: 'Convert to bullet list' },
+                ].map(action => (
+                  <button key={action.id} className="ai-action-btn"
+                    style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Outfit, sans-serif', display: 'flex', flexDirection: 'column', gap: 2, transition: 'all 0.15s' }}
+                    onClick={() => handleAI(action.id)} disabled={aiLoading}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{action.label}</span>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{action.desc}</span>
+                  </button>
+                ))}
+              </div>
+
+              {aiLoading && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px', background: 'var(--bg-card)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                  <div style={{ width: 16, height: 16, border: '2px solid var(--border)', borderTopColor: '#7c6aff', borderRadius: '50%', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />
+                  <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Thinking...</span>
+                </div>
+              )}
+
+              {aiResult && !aiLoading && (
+                <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+                  <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)' }}>RESULT</span>
+                    <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 11 }} onClick={() => setAiResult('')}>✕ Clear</button>
+                  </div>
+                  <div style={{ padding: 12, fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap', color: 'var(--text-primary)', maxHeight: 200, overflow: 'auto' }}>{aiResult}</div>
+                  <div style={{ display: 'flex', gap: 8, padding: '8px 12px', borderTop: '1px solid var(--border)' }}>
+                    <button style={{ flex: 1, background: 'linear-gradient(135deg, #7c6aff, #5b4de8)', color: '#fff', border: 'none', borderRadius: 6, padding: '7px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}
+                      onClick={() => { const quill = quillRef.current; if (quill) { const sel = quill.getSelection() || { index: quill.getLength(), length: 0 }; quill.insertText(sel.index + sel.length, '\n' + aiResult) } }}>
+                      Insert
+                    </button>
+                    <button style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, padding: '7px 12px', fontSize: 12, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}
+                      onClick={() => { navigator.clipboard.writeText(aiResult); setCopied(true); setTimeout(() => setCopied(false), 2000) }}>
+                      {copied ? '✓ Copied' : 'Copy'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </aside>
         )}
       </div>
-{codeModal && (
-  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-    <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 12, padding: 24, width: 340, display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>🔑 Share Document</h3>
-      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <p style={{ margin: 0, fontSize: 11, color: 'var(--text-muted)' }}>EDITOR CODE</p>
-          <p style={{ margin: 0, fontSize: 20, fontWeight: 700, letterSpacing: 3 }}>{codeModal.editor_code}</p>
-          <p style={{ margin: 0, fontSize: 11, color: 'var(--text-muted)' }}>Can edit the document</p>
+
+      {/* Share Code Modal */}
+      {codeModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
+          <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 16, padding: 28, width: 360, display: 'flex', flexDirection: 'column', gap: 16, boxShadow: '0 24px 64px rgba(0,0,0,0.5)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, letterSpacing: '-0.3px' }}>🔑 Share Document</h3>
+              <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 18 }} onClick={() => setCodeModal(null)}>✕</button>
+            </div>
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--text-muted)' }}>Share these codes with collaborators to give them access.</p>
+
+            {/* Editor Code */}
+            <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(124,106,255,0.3)', borderRadius: 10, padding: '14px 16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#7c6aff', letterSpacing: '0.08em' }}>EDITOR CODE</span>
+                <button style={{ background: 'rgba(124,106,255,0.15)', color: '#7c6aff', border: '1px solid rgba(124,106,255,0.3)', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: 'Outfit, sans-serif' }}
+                  onClick={() => { navigator.clipboard.writeText(codeModal.editor_code); alert('🔑 Editor code copied!') }}>Copy</button>
+              </div>
+              <p style={{ margin: 0, fontSize: 26, fontWeight: 800, letterSpacing: 6, fontFamily: 'monospace' }}>{codeModal.editor_code}</p>
+              <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>Can edit and collaborate on the document</p>
+            </div>
+
+            {/* Viewer Code */}
+            <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(243,156,18,0.3)', borderRadius: 10, padding: '14px 16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#f39c12', letterSpacing: '0.08em' }}>VIEWER CODE</span>
+                <button style={{ background: 'rgba(243,156,18,0.15)', color: '#f39c12', border: '1px solid rgba(243,156,18,0.3)', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: 'Outfit, sans-serif' }}
+                  onClick={() => { navigator.clipboard.writeText(codeModal.viewer_code); alert('👁 Viewer code copied!') }}>Copy</button>
+              </div>
+              <p style={{ margin: 0, fontSize: 26, fontWeight: 800, letterSpacing: 6, fontFamily: 'monospace' }}>{codeModal.viewer_code}</p>
+              <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>Can only read the document</p>
+            </div>
+          </div>
         </div>
-        <button style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: 'Outfit, sans-serif' }} onClick={() => { navigator.clipboard.writeText(codeModal.editor_code); alert('🔑 Editor code copied!') }}>Copy</button>
-      </div>
-      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <p style={{ margin: 0, fontSize: 11, color: 'var(--text-muted)' }}>VIEWER CODE</p>
-          <p style={{ margin: 0, fontSize: 20, fontWeight: 700, letterSpacing: 3 }}>{codeModal.viewer_code}</p>
-          <p style={{ margin: 0, fontSize: 11, color: 'var(--text-muted)' }}>Can only read the document</p>
-        </div>
-        <button style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, padding: '8px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: 'Outfit, sans-serif' }} onClick={() => { navigator.clipboard.writeText(codeModal.viewer_code); alert('👁 Viewer code copied!') }}>Copy</button>
-      </div>
-      <button style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 6, padding: '8px', cursor: 'pointer', color: 'var(--text-muted)', fontFamily: 'Outfit, sans-serif', fontSize: 13 }} onClick={() => setCodeModal(null)}>Close</button>
-    </div>
-  </div>
-)}
+      )}
     </div>
   )
 }
