@@ -160,8 +160,19 @@ export default function Dashboard() {
             <h1 style={styles.mainTitle}>My Documents</h1>
             <p style={styles.mainSubtitle}>{filtered.length} of {documents.length} documents</p>
           </div>
-          <div style={styles.headerRight}>
-            <div style={styles.searchWrap}>
+         <div style={styles.headerRight}>
+  <button onClick={() => {
+    const current = document.documentElement.getAttribute('data-theme') || 'dark'
+    const next = current === 'dark' ? 'light' : 'dark'
+    document.documentElement.setAttribute('data-theme', next)
+    localStorage.setItem('collab-theme', next)
+    window.dispatchEvent(new Event('themechange'))
+  }} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+    <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.05em' }}>DARK</span>
+    <span style={{ fontSize: 16 }}>{document.documentElement.getAttribute('data-theme') === 'light' ? '🌙' : '☀️'}</span>
+    <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.05em' }}>LIGHT</span>
+  </button>
+  <div style={styles.searchWrap}>
               <span style={styles.searchIcon}>🔍</span>
               <input className="search-input" style={styles.searchInput} placeholder="Search documents..."
                 value={search} onChange={e => setSearch(e.target.value)} />
