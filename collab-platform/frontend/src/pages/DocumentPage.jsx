@@ -235,6 +235,12 @@ export default function DocumentPage() {
         .ql-editor { padding: 32px 48px !important; min-height: calc(100vh - 120px) !important; line-height: 1.8 !important; color: var(--text-primary) !important; }
         .ql-editor.ql-blank::before { color: var(--text-muted) !important; font-style: normal !important; }
         .ql-disabled .ql-editor { background: transparent !important; cursor: default !important; }
+@media print {
+  body * { visibility: hidden; }
+  .print-area, .print-area * { visibility: visible; }
+  .print-area { position: fixed; top: 0; left: 0; width: 100%; }
+  .ql-toolbar { display: none !important; }
+}
         .ai-action-btn:hover { background: rgba(124,106,255,0.15) !important; border-color: rgba(124,106,255,0.4) !important; }
         .header-btn:hover { background: var(--bg-card) !important; }
       `}</style>
@@ -300,6 +306,13 @@ export default function DocumentPage() {
           </button>
 
           {/* Share button */}
+<button style={{ background: 'var(--bg-card)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 7, padding: '5px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif', fontWeight: 500 }}
+  onClick={() => {
+    document.title = title
+    window.print()
+  }}>
+  📄 Export PDF
+</button>
           {myRole === 'OWNER' && (
             <button style={{ background: 'linear-gradient(135deg, #7c6aff, #5b4de8)', color: '#fff', border: 'none', borderRadius: 7, padding: '5px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif', fontWeight: 600, boxShadow: '0 2px 8px rgba(124,106,255,0.3)' }}
               onClick={() => api.post('/documents/' + id + '/generate-code').then(res => setCodeModal(res.data)).catch(() => alert('Failed to generate code'))}>
@@ -313,7 +326,7 @@ export default function DocumentPage() {
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         {/* Editor */}
         <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
-          <div ref={editorRef} style={{ flex: 1 }} />
+          <div className="print-area" ref={editorRef} style={{ flex: 1 }} />
         </div>
 
         {/* Chat Panel */}
