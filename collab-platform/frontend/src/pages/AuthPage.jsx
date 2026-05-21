@@ -23,15 +23,15 @@ export default function AuthPage() {
       navigate('/dashboard')
     } catch (err) {
       const msg = typeof err === 'string' ? err.toLowerCase() : ''
-if (msg.includes('invalid') || msg.includes('credentials') || msg.includes('password')) {
-  setError('Incorrect password. Please try again.')
-} else if (msg.includes('not found') || msg.includes('no account') || msg.includes('user')) {
-  setError('No account found with this email.')
-} else if (msg.includes('already') || msg.includes('registered') || msg.includes('exists')) {
-  setError('An account with this email already exists.')
-} else {
-  setError('Something went wrong. Please try again.')
-}
+      if (msg.includes('invalid') || msg.includes('credentials') || msg.includes('password')) {
+        setError('Incorrect password. Please try again.')
+      } else if (msg.includes('not found') || msg.includes('no account') || msg.includes('user')) {
+        setError('No account found with this email.')
+      } else if (msg.includes('already') || msg.includes('registered') || msg.includes('exists')) {
+        setError('An account with this email already exists.')
+      } else {
+        setError('Something went wrong. Please try again.')
+      }
     } finally {
       setLoading(false)
     }
@@ -40,36 +40,26 @@ if (msg.includes('invalid') || msg.includes('credentials') || msg.includes('pass
   return (
     <div style={styles.page}>
       <style>{`
-        @keyframes float1 {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-20px) rotate(5deg); }
-        }
-        @keyframes float2 {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(20px) rotate(-5deg); }
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes pulse {
-          0%, 100% { opacity: 0.6; }
-          50% { opacity: 1; }
-        }
-        .auth-input:focus {
-          border-color: #7c6aff !important;
-          box-shadow: 0 0 0 3px rgba(124,106,255,0.15) !important;
-          outline: none !important;
-        }
+        @keyframes float1 { 0%, 100% { transform: translateY(0px) rotate(0deg); } 50% { transform: translateY(-20px) rotate(5deg); } }
+        @keyframes float2 { 0%, 100% { transform: translateY(0px) rotate(0deg); } 50% { transform: translateY(20px) rotate(-5deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .auth-input:focus { border-color: #7c6aff !important; box-shadow: 0 0 0 3px rgba(124,106,255,0.15) !important; outline: none !important; }
         .auth-btn:hover { background: #6a58e8 !important; transform: translateY(-1px); }
         .auth-btn:active { transform: translateY(0); }
         .switch-btn:hover { text-decoration: underline; }
         .feature-item { transition: transform 0.2s; }
         .feature-item:hover { transform: translateX(4px); }
+
+        @media (max-width: 768px) {
+          .auth-left-panel { display: none !important; }
+          .auth-right-panel { width: 100% !important; padding: 32px 20px !important; min-height: 100vh; justify-content: flex-start !important; padding-top: 48px !important; }
+          .auth-card { max-width: 100% !important; }
+        }
       `}</style>
 
       {/* Left Panel */}
-      <div style={styles.leftPanel}>
+      <div className="auth-left-panel" style={styles.leftPanel}>
         <div style={styles.leftContent}>
           <div style={styles.brandRow}>
             <div style={styles.brandIcon}>⚡</div>
@@ -91,14 +81,19 @@ if (msg.includes('invalid') || msg.includes('credentials') || msg.includes('pass
             ))}
           </div>
         </div>
-        {/* Floating blobs */}
         <div style={{ ...styles.blob, top: '10%', right: '-5%', animationName: 'float1', animationDuration: '6s', animationIterationCount: 'infinite' }} />
         <div style={{ ...styles.blob, bottom: '15%', left: '-8%', width: 200, height: 200, background: 'rgba(46,204,113,0.12)', animationName: 'float2', animationDuration: '8s', animationIterationCount: 'infinite' }} />
       </div>
 
       {/* Right Panel */}
-      <div style={styles.rightPanel}>
-        <div style={styles.card}>
+      <div className="auth-right-panel" style={styles.rightPanel}>
+        <div className="auth-card" style={styles.card}>
+          {/* Mobile logo */}
+          <div style={styles.mobileLogo}>
+            <div style={styles.brandIcon}>⚡</div>
+            <span style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.5px' }}>Collab</span>
+          </div>
+
           <div style={styles.tabRow}>
             <button style={{ ...styles.tab, ...(isLogin ? styles.tabActive : {}) }} onClick={() => { setIsLogin(true); setError('') }}>Sign in</button>
             <button style={{ ...styles.tab, ...(!isLogin ? styles.tabActive : {}) }} onClick={() => { setIsLogin(false); setError('') }}>Sign up</button>
@@ -161,11 +156,7 @@ if (msg.includes('invalid') || msg.includes('credentials') || msg.includes('pass
 }
 
 const styles = {
-  page: {
-    minHeight: '100vh', display: 'flex',
-    background: 'var(--bg-primary)',
-    fontFamily: 'Outfit, sans-serif',
-  },
+  page: { minHeight: '100vh', display: 'flex', background: 'var(--bg-primary)', fontFamily: 'Outfit, sans-serif' },
   leftPanel: {
     flex: 1, background: 'linear-gradient(135deg, #1a1730 0%, #0f0f1a 100%)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -174,11 +165,7 @@ const styles = {
   },
   leftContent: { position: 'relative', zIndex: 1, maxWidth: 400 },
   brandRow: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 40 },
-  brandIcon: {
-    width: 40, height: 40, background: 'linear-gradient(135deg, #7c6aff, #5b4de8)',
-    borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
-    boxShadow: '0 4px 16px rgba(124,106,255,0.4)',
-  },
+  brandIcon: { width: 40, height: 40, background: 'linear-gradient(135deg, #7c6aff, #5b4de8)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, boxShadow: '0 4px 16px rgba(124,106,255,0.4)' },
   brandName: { fontSize: 22, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px' },
   leftTitle: { fontSize: 36, fontWeight: 800, color: '#fff', lineHeight: 1.2, marginBottom: 16, letterSpacing: '-0.5px' },
   gradientText: { background: 'linear-gradient(135deg, #7c6aff, #2ecc71)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' },
@@ -188,11 +175,9 @@ const styles = {
   featureIcon: { width: 36, height: 36, background: 'rgba(124,106,255,0.15)', border: '1px solid rgba(124,106,255,0.2)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 },
   featureText: { fontSize: 14, color: 'rgba(255,255,255,0.7)', fontWeight: 500 },
   blob: { position: 'absolute', width: 300, height: 300, borderRadius: '50%', background: 'rgba(124,106,255,0.1)', filter: 'blur(40px)', pointerEvents: 'none' },
-  rightPanel: {
-    width: 480, display: 'flex', alignItems: 'center', justifyContent: 'center',
-    padding: '40px 40px', background: 'var(--bg-primary)',
-  },
+  rightPanel: { width: 480, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 40px', background: 'var(--bg-primary)' },
   card: { width: '100%', maxWidth: 400, animation: 'fadeIn 0.4s ease' },
+  mobileLogo: { display: 'none', alignItems: 'center', gap: 10, marginBottom: 28 },
   tabRow: { display: 'flex', background: 'var(--bg-secondary)', borderRadius: 10, padding: 4, marginBottom: 28, border: '1px solid var(--border)' },
   tab: { flex: 1, padding: '8px', border: 'none', borderRadius: 7, fontSize: 14, fontWeight: 600, cursor: 'pointer', background: 'none', color: 'var(--text-muted)', fontFamily: 'Outfit, sans-serif', transition: 'all 0.2s' },
   tabActive: { background: 'var(--accent)', color: '#fff', boxShadow: '0 2px 8px rgba(124,106,255,0.4)' },
@@ -201,23 +186,9 @@ const styles = {
   form: { display: 'flex', flexDirection: 'column', gap: 16 },
   field: { display: 'flex', flexDirection: 'column', gap: 6 },
   label: { fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' },
-  input: {
-    background: 'var(--bg-secondary)', border: '1px solid var(--border)',
-    borderRadius: 8, padding: '11px 14px', color: 'var(--text-primary)',
-    fontSize: 14, fontFamily: 'Outfit, sans-serif', transition: 'all 0.2s',
-    boxShadow: 'none',
-  },
-  error: {
-    background: 'rgba(231,76,60,0.1)', border: '1px solid rgba(231,76,60,0.3)',
-    borderRadius: 8, padding: '10px 14px', color: '#e74c3c', fontSize: 13,
-    display: 'flex', alignItems: 'center', gap: 8,
-  },
-  btn: {
-    background: 'linear-gradient(135deg, #7c6aff, #5b4de8)', color: '#fff', border: 'none',
-    borderRadius: 8, padding: '12px', fontSize: 15, fontWeight: 600,
-    cursor: 'pointer', marginTop: 4, fontFamily: 'Outfit, sans-serif',
-    transition: 'all 0.2s', boxShadow: '0 4px 16px rgba(124,106,255,0.3)',
-  },
+  input: { background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 8, padding: '11px 14px', color: 'var(--text-primary)', fontSize: 14, fontFamily: 'Outfit, sans-serif', transition: 'all 0.2s', boxShadow: 'none' },
+  error: { background: 'rgba(231,76,60,0.1)', border: '1px solid rgba(231,76,60,0.3)', borderRadius: 8, padding: '10px 14px', color: '#e74c3c', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 },
+  btn: { background: 'linear-gradient(135deg, #7c6aff, #5b4de8)', color: '#fff', border: 'none', borderRadius: 8, padding: '12px', fontSize: 15, fontWeight: 600, cursor: 'pointer', marginTop: 4, fontFamily: 'Outfit, sans-serif', transition: 'all 0.2s', boxShadow: '0 4px 16px rgba(124,106,255,0.3)' },
   divider: { display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0' },
   dividerLine: { flex: 1, height: 1, background: 'var(--border)' },
   dividerText: { fontSize: 12, color: 'var(--text-muted)' },
