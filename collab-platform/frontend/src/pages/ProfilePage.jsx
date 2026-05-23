@@ -45,20 +45,34 @@ export default function ProfilePage() {
     }
   }
 
-  const handleImageUpload = (e) => {
+ const handleImageUpload = (e) => {
     const file = e.target.files[0]
     if (!file) return
-    if (file.size > 2 * 1024 * 1024) {
-      setNameError('Image must be less than 2MB.')
+    if (file.size > 5 * 1024 * 1024) {
+      setNameError('Image must be less than 5MB.')
       return
     }
     const reader = new FileReader()
     reader.onloadend = () => {
-      setAvatarImage(reader.result)
+      // Compress image using canvas
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        const maxSize = 200
+        let w = img.width, h = img.height
+        if (w > h) { h = (h / w) * maxSize; w = maxSize }
+        else { w = (w / h) * maxSize; h = maxSize }
+        canvas.width = w
+        canvas.height = h
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, w, h)
+        const compressed = canvas.toDataURL('image/jpeg', 0.7)
+        setAvatarImage(compressed)
+      }
+      img.src = reader.result
     }
     reader.readAsDataURL(file)
   }
-
   const removeImage = () => {
     setAvatarImage(null)
     if (fileInputRef.current) fileInputRef.current.value = ''
