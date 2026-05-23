@@ -90,8 +90,8 @@ export default function ProfilePage() {
       })
 console.log('Save response:', res.data)
       setNameSuccess('Profile updated successfully!')
-      setProfile(prev => ({ ...prev, name, avatar_color: avatarColor, avatar_image: avatarImage }))
-      setTimeout(() => setNameSuccess(''), 3000)
+await fetchProfile()
+setTimeout(() => setNameSuccess(''), 3000)
     } catch (err) {
       setNameError('Failed to update profile.')
     } finally {
