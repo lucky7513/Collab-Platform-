@@ -88,6 +88,7 @@ export default function ProfilePage() {
         avatar_color: avatarColor,
         avatar_image: avatarImage,
       })
+console.log('Save response:', res.data)
       setNameSuccess('Profile updated successfully!')
       setProfile(prev => ({ ...prev, name, avatar_color: avatarColor, avatar_image: avatarImage }))
       setTimeout(() => setNameSuccess(''), 3000)
