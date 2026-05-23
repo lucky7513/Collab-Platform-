@@ -92,8 +92,12 @@ console.log('Save response:', res.data)
       setNameSuccess('Profile updated successfully!')
 await fetchProfile()
 setTimeout(() => setNameSuccess(''), 3000)
-    } catch (err) {
-      setNameError('Failed to update profile.')
+   } catch (err) {
+      console.error('Save error:', err)
+      if (err && err !== 'undefined') {
+        setNameError('Failed to update profile: ' + err)
+      }
+    }
     } finally {
       setSaving(false)
     }
