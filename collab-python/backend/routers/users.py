@@ -15,6 +15,7 @@ router = APIRouter(prefix="/api/users", tags=["users"])
 class UpdateProfileRequest(BaseModel):
     name: Optional[str] = None
     avatar_color: Optional[str] = None
+    avatar_image: Optional[str] = None
 
 class ChangePasswordRequest(BaseModel):
     current_password: str
@@ -44,15 +45,18 @@ def update_profile(req: UpdateProfileRequest, user: User = Depends(get_current_u
         user.name = req.name
     if req.avatar_color:
         user.avatar_color = req.avatar_color
+    if req.avatar_image is not None:
+        user.avatar_image = req.avatar_image
     db.commit()
     db.refresh(user)
-    return {
-        "id": str(user.id),
-        "name": user.name,
-        "email": user.email,
-        "avatar_color": user.avatar_color,
-    }
-
+   return {
+    "id": str(user.id),
+    "name": user.name,
+    "email": user.email,
+    "avatar_color": user.avatar_color,
+    "avatar_image": user.avatar_image,
+    "created_at": user.created_at,
+}
 @router.post("/me/change-password")
 def change_password(req: ChangePasswordRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if not bcrypt.checkpw(req.current_password.encode('utf-8'), user.password_hash.encode('utf-8')):
