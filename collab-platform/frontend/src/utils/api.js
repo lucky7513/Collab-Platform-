@@ -6,7 +6,7 @@ const baseURL = import.meta.env.VITE_API_URL
 
 const api = axios.create({
   baseURL,
-  timeout: 10000,
+  timeout: 30000,
   withCredentials: false,
 })
 
@@ -30,7 +30,7 @@ api.interceptors.response.use(
       localStorage.removeItem('collab-auth')
       window.location.href = '/login'
     }
-    return Promise.reject(error.response?.data?.message || error.message)
+    return Promise.reject(error.response?.data?.detail || error.response?.data?.message || error.message)
   }
 )
 
