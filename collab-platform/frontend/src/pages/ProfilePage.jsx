@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useAuthStore from '../store/authStore'
 import api from '../utils/api'
@@ -10,14 +10,16 @@ const AVATAR_COLORS = [
 ]
 
 export default function ProfilePage() {
-  const { user, token, login } = useAuthStore()
+  const { user, token } = useAuthStore()
   const navigate = useNavigate()
+  const fileInputRef = useRef(null)
 
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [name, setName] = useState('')
   const [avatarColor, setAvatarColor] = useState('#7c6aff')
+  const [avatarImage, setAvatarImage] = useState(null)
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -27,9 +29,7 @@ export default function ProfilePage() {
   const [passError, setPassError] = useState('')
   const [activeTab, setActiveTab] = useState('profile')
 
-  useEffect(() => {
-    fetchProfile()
-  }, [])
+  useEffect(() => { fetchProfile() }, [])
 
   const fetchProfile = async () => {
     try {
@@ -37,6 +37,7 @@ export default function ProfilePage() {
       setProfile(res.data)
       setName(res.data.name)
       setAvatarColor(res.data.avatar_color || '#7c6aff')
+      setAvatarImage(res.data.avatar_image || null)
     } catch (err) {
       console.error('Failed to fetch profile:', err)
     } finally {
@@ -44,14 +45,37 @@ export default function ProfilePage() {
     }
   }
 
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    if (file.size > 2 * 1024 * 1024) {
+      setNameError('Image must be less than 2MB.')
+      return
+    }
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setAvatarImage(reader.result)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const removeImage = () => {
+    setAvatarImage(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
   const saveProfile = async () => {
     setSaving(true)
     setNameError('')
     setNameSuccess('')
     try {
-      await api.patch('/users/me', { name, avatar_color: avatarColor })
+      await api.patch('/users/me', {
+        name,
+        avatar_color: avatarColor,
+        avatar_image: avatarImage,
+      })
       setNameSuccess('Profile updated successfully!')
-      setProfile(prev => ({ ...prev, name, avatar_color: avatarColor }))
+      setProfile(prev => ({ ...prev, name, avatar_color: avatarColor, avatar_image: avatarImage }))
       setTimeout(() => setNameSuccess(''), 3000)
     } catch (err) {
       setNameError('Failed to update profile.')
@@ -63,24 +87,13 @@ export default function ProfilePage() {
   const changePassword = async () => {
     setPassError('')
     setPassSuccess('')
-    if (newPassword !== confirmPassword) {
-      setPassError('New passwords do not match.')
-      return
-    }
-    if (newPassword.length < 4) {
-      setPassError('Password must be at least 4 characters.')
-      return
-    }
+    if (newPassword !== confirmPassword) { setPassError('New passwords do not match.'); return }
+    if (newPassword.length < 4) { setPassError('Password must be at least 4 characters.'); return }
     setSaving(true)
     try {
-      await api.post('/users/me/change-password', {
-        current_password: currentPassword,
-        new_password: newPassword,
-      })
+      await api.post('/users/me/change-password', { current_password: currentPassword, new_password: newPassword })
       setPassSuccess('Password changed successfully!')
-      setCurrentPassword('')
-      setNewPassword('')
-      setConfirmPassword('')
+      setCurrentPassword(''); setNewPassword(''); setConfirmPassword('')
       setTimeout(() => setPassSuccess(''), 3000)
     } catch (err) {
       setPassError(err || 'Current password is incorrect.')
@@ -102,7 +115,6 @@ export default function ProfilePage() {
   }
 
   const getInitials = (name) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '?'
-
   const formatDate = (dateStr) => {
     if (!dateStr) return 'Unknown'
     return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
@@ -124,6 +136,7 @@ export default function ProfilePage() {
         .color-swatch:hover { transform: scale(1.15) !important; }
         .tab-btn:hover { background: var(--bg-hover) !important; }
         .save-btn:hover { opacity: 0.9 !important; transform: translateY(-1px); }
+        .upload-btn:hover { border-color: #7c6aff !important; background: rgba(124,106,255,0.05) !important; }
       `}</style>
 
       {/* Header */}
@@ -138,16 +151,22 @@ export default function ProfilePage() {
       <div style={{ maxWidth: 700, margin: '0 auto', padding: '32px 20px', animation: 'fadeIn 0.3s ease' }}>
 
         {/* Profile Card */}
-        <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 16, padding: 28, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 20 }}>
-          <div style={{ width: 72, height: 72, borderRadius: '50%', background: avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, fontWeight: 800, color: '#fff', flexShrink: 0, boxShadow: `0 4px 16px ${avatarColor}60` }}>
-            {getInitials(profile?.name)}
+        <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 16, padding: 28, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            {avatarImage ? (
+              <img src={avatarImage} alt="avatar" style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', boxShadow: `0 4px 16px rgba(0,0,0,0.3)` }} />
+            ) : (
+              <div style={{ width: 72, height: 72, borderRadius: '50%', background: avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, fontWeight: 800, color: '#fff', boxShadow: `0 4px 16px ${avatarColor}60` }}>
+                {getInitials(profile?.name)}
+              </div>
+            )}
           </div>
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, minWidth: 160 }}>
             <h1 style={{ fontSize: 22, fontWeight: 800, marginBottom: 4, letterSpacing: '-0.5px' }}>{profile?.name}</h1>
             <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 8 }}>{profile?.email}</p>
             <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Member since {formatDate(profile?.created_at)}</p>
           </div>
-          <div style={{ display: 'flex', gap: 16, flexShrink: 0 }}>
+          <div style={{ display: 'flex', gap: 12, flexShrink: 0 }}>
             <div style={{ textAlign: 'center', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 20px' }}>
               <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--accent)', marginBottom: 2 }}>{profile?.stats?.owned_documents || 0}</p>
               <p style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>MY DOCS</p>
@@ -166,7 +185,8 @@ export default function ProfilePage() {
             { id: 'password', label: '🔒 Password' },
             { id: 'danger', label: '⚠️ Danger Zone' },
           ].map(tab => (
-            <button key={tab.id} className="tab-btn" style={{ flex: 1, padding: '8px', border: 'none', borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'Outfit, sans-serif', transition: 'all 0.15s', background: activeTab === tab.id ? 'var(--accent)' : 'none', color: activeTab === tab.id ? '#fff' : 'var(--text-muted)' }} onClick={() => setActiveTab(tab.id)}>
+            <button key={tab.id} className="tab-btn" style={{ flex: 1, padding: '8px', border: 'none', borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'Outfit, sans-serif', transition: 'all 0.15s', background: activeTab === tab.id ? 'var(--accent)' : 'none', color: activeTab === tab.id ? '#fff' : 'var(--text-muted)' }}
+              onClick={() => setActiveTab(tab.id)}>
               {tab.label}
             </button>
           ))}
@@ -175,12 +195,48 @@ export default function ProfilePage() {
         {/* Profile Tab */}
         {activeTab === 'profile' && (
           <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 16, padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+            {/* Avatar Upload */}
+            <div>
+              <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 12 }}>Profile Picture</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                {/* Preview */}
+                <div style={{ position: 'relative', flexShrink: 0 }}>
+                  {avatarImage ? (
+                    <img src={avatarImage} alt="avatar preview" style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--accent)' }} />
+                  ) : (
+                    <div style={{ width: 64, height: 64, borderRadius: '50%', background: avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 800, color: '#fff', border: '3px solid var(--border)' }}>
+                      {getInitials(name)}
+                    </div>
+                  )}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageUpload} />
+                  <button className="upload-btn" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 16px', color: 'var(--text-primary)', cursor: 'pointer', fontSize: 13, fontWeight: 500, fontFamily: 'Outfit, sans-serif', transition: 'all 0.15s' }}
+                    onClick={() => fileInputRef.current?.click()}>
+                    📷 Upload Photo
+                  </button>
+                  {avatarImage && (
+                    <button style={{ background: 'rgba(231,76,60,0.1)', border: '1px solid rgba(231,76,60,0.3)', borderRadius: 8, padding: '8px 16px', color: '#e74c3c', cursor: 'pointer', fontSize: 13, fontWeight: 500, fontFamily: 'Outfit, sans-serif' }}
+                      onClick={removeImage}>
+                      🗑️ Remove Photo
+                    </button>
+                  )}
+                  <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>JPG, PNG or GIF · Max 2MB</p>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ height: 1, background: 'var(--border)' }} />
+
+            {/* Name */}
             <div>
               <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>Display Name</label>
               <input className="profile-input" style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: '11px 14px', color: 'var(--text-primary)', fontSize: 14, fontFamily: 'Outfit, sans-serif', transition: 'all 0.2s', boxSizing: 'border-box' }}
                 value={name} onChange={e => setName(e.target.value)} placeholder="Your name" />
             </div>
 
+            {/* Email */}
             <div>
               <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>Email Address</label>
               <input style={{ width: '100%', background: 'var(--bg-hover)', border: '1px solid var(--border)', borderRadius: 8, padding: '11px 14px', color: 'var(--text-muted)', fontSize: 14, fontFamily: 'Outfit, sans-serif', boxSizing: 'border-box', cursor: 'not-allowed' }}
@@ -188,15 +244,18 @@ export default function ProfilePage() {
               <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Email cannot be changed</p>
             </div>
 
-            <div>
-              <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 12 }}>Avatar Color</label>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {AVATAR_COLORS.map(color => (
-                  <div key={color} className="color-swatch" style={{ width: 36, height: 36, borderRadius: '50%', background: color, cursor: 'pointer', transition: 'transform 0.15s', border: avatarColor === color ? '3px solid white' : '3px solid transparent', boxShadow: avatarColor === color ? `0 0 0 2px ${color}` : 'none' }}
-                    onClick={() => setAvatarColor(color)} />
-                ))}
+            {/* Avatar Color */}
+            {!avatarImage && (
+              <div>
+                <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 12 }}>Avatar Color <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400 }}>(used when no photo)</span></label>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {AVATAR_COLORS.map(color => (
+                    <div key={color} className="color-swatch" style={{ width: 36, height: 36, borderRadius: '50%', background: color, cursor: 'pointer', transition: 'transform 0.15s', border: avatarColor === color ? '3px solid white' : '3px solid transparent', boxShadow: avatarColor === color ? `0 0 0 2px ${color}` : 'none' }}
+                      onClick={() => setAvatarColor(color)} />
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {nameSuccess && <div style={{ background: 'rgba(46,204,113,0.1)', border: '1px solid rgba(46,204,113,0.3)', borderRadius: 8, padding: '10px 14px', color: '#2ecc71', fontSize: 13 }}>✅ {nameSuccess}</div>}
             {nameError && <div style={{ background: 'rgba(231,76,60,0.1)', border: '1px solid rgba(231,76,60,0.3)', borderRadius: 8, padding: '10px 14px', color: '#e74c3c', fontSize: 13 }}>⚠️ {nameError}</div>}
