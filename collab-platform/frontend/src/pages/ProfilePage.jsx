@@ -98,7 +98,7 @@ setTimeout(() => setNameSuccess(''), 3000)
         setNameError('Failed to update profile: ' + err)
       }
     }
-    } finally {
+     finally {
       setSaving(false)
     }
   }
