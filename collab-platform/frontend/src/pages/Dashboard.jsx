@@ -254,7 +254,7 @@ export default function Dashboard() {
         </div>
 
         <div style={styles.sidebarBottom}>
-          <div style={styles.userAvatar}>{getInitials(user?.name)}</div>
+        <div style={{ ...styles.userAvatar, cursor: 'pointer' }} onClick={() => navigate('/profile')} title="View Profile">{getInitials(user?.name)}</div>
           <div style={styles.userInfo}>
             <p style={styles.userName}>{user?.name || ''}</p>
             <p style={styles.userEmail}>{user?.email || ''}</p>

@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from db.database import create_tables
 from core.config import get_settings
-from routers import auth, documents, ai, photos
+from routers import auth, documents, ai, photos, users
 from routers.websocket import collab_ws_endpoint
 
 settings = get_settings()
@@ -29,6 +29,7 @@ async def cors_middleware(request: Request, call_next):
 
 app.include_router(auth.router)
 app.include_router(documents.router)
+app.include_router(users.router)
 app.include_router(ai.router)
 app.include_router(photos.router)
 app.add_api_websocket_route("/ws/collab/{document_id}", collab_ws_endpoint)
