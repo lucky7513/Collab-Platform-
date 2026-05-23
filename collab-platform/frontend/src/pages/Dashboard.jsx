@@ -115,49 +115,132 @@ export default function Dashboard() {
         .search-input:focus { outline: none; border-color: var(--accent) !important; box-shadow: 0 0 0 3px rgba(124,106,255,0.1) !important; }
         .action-btn:hover { opacity: 0.85 !important; transform: scale(0.97); }
 
+        .dash-sidebar {
+          width: 250px;
+          background: var(--bg-secondary);
+          border-right: 1px solid var(--border);
+          display: flex;
+          flex-direction: column;
+          padding: 20px 12px;
+          flex-shrink: 0;
+          transition: transform 0.3s ease;
+        }
+
+        .dash-main {
+          flex: 1;
+          padding: 32px 40px;
+          overflow: auto;
+        }
+
+        .dash-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+          gap: 16px;
+        }
+
+        .dash-header {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          margin-bottom: 28px;
+        }
+
+        .dash-header-right {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .mobile-topbar {
+          display: none;
+          position: fixed;
+          top: 0; left: 0; right: 0;
+          height: 56px;
+          background: var(--bg-secondary);
+          border-bottom: 1px solid var(--border);
+          z-index: 100;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 16px;
+        }
+
+        .dash-overlay {
+          display: none;
+          position: fixed;
+          inset: 0;
+          background: rgba(0,0,0,0.5);
+          z-index: 999;
+        }
+
         @media (max-width: 768px) {
           .dash-sidebar {
-            position: fixed !important; left: 0; top: 0; height: 100vh; z-index: 1000;
-            transform: translateX(-100%); transition: transform 0.3s ease !important;
+            position: fixed !important;
+            left: 0; top: 0;
+            height: 100vh;
+            z-index: 1000;
+            transform: translateX(-100%);
+            box-shadow: 4px 0 20px rgba(0,0,0,0.4);
           }
-          .dash-sidebar.open { transform: translateX(0) !important; }
-          .dash-overlay { display: block !important; }
-          .dash-main { padding: 16px !important; }
-          .dash-header { flex-direction: column !important; align-items: stretch !important; gap: 12px !important; }
-          .dash-header-right { flex-wrap: wrap !important; gap: 8px !important; }
-          .dash-search input { width: 100% !important; }
-          .dash-grid { grid-template-columns: 1fr !important; }
-          .mobile-topbar { display: flex !important; }
+          .dash-sidebar.open {
+            transform: translateX(0) !important;
+          }
+          .dash-overlay.open {
+            display: block !important;
+          }
+          .mobile-topbar {
+            display: flex !important;
+          }
+          .dash-main {
+            padding: 72px 16px 16px 16px !important;
+          }
+          .dash-header {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 12px !important;
+          }
+          .dash-header-right {
+            flex-wrap: wrap !important;
+            gap: 8px !important;
+          }
+          .dash-search-input {
+            width: 100% !important;
+          }
+          .dash-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .desktop-only {
+            display: none !important;
+          }
         }
       `}</style>
 
       {/* Mobile overlay */}
-      <div className="dash-overlay" style={{ display: 'none', position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 999 }} onClick={() => setSidebarOpen(false)} />
+      <div className={`dash-overlay${sidebarOpen ? ' open' : ''}`} onClick={() => setSidebarOpen(false)} />
 
       {/* Mobile topbar */}
-      <div className="mobile-topbar" style={{ display: 'none', position: 'fixed', top: 0, left: 0, right: 0, height: 52, background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)', zIndex: 100, alignItems: 'center', justifyContent: 'space-between', padding: '0 16px' }}>
-        <button style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', fontSize: 20 }} onClick={() => setSidebarOpen(true)}>☰</button>
+      <div className="mobile-topbar">
+        <button style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', fontSize: 22, padding: 4 }} onClick={() => setSidebarOpen(true)}>☰</button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 28, height: 28, background: 'linear-gradient(135deg, #7c6aff, #5b4de8)', borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>⚡</div>
-          <span style={{ fontWeight: 800, fontSize: 16 }}>Collab</span>
+          <div style={{ width: 28, height: 28, background: 'linear-gradient(135deg, #7c6aff, #5b4de8)', borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13 }}>⚡</div>
+          <span style={{ fontWeight: 800, fontSize: 17, letterSpacing: '-0.5px' }}>Collab</span>
         </div>
-        <button style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 7, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'Outfit, sans-serif' }} onClick={createDocument}>+ New</button>
+        <button style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 7, padding: '7px 14px', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'Outfit, sans-serif' }} onClick={createDocument}>+ New</button>
       </div>
 
       {/* Sidebar */}
-      <aside className={`dash-sidebar${sidebarOpen ? ' open' : ''}`} style={styles.sidebar}>
+      <aside className={`dash-sidebar${sidebarOpen ? ' open' : ''}`}>
         <div style={styles.sidebarLogo}>
           <div style={styles.logoIcon}>⚡</div>
           <span style={styles.logoText}>Collab</span>
-          <button style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 18, display: 'none' }} className="close-sidebar" onClick={() => setSidebarOpen(false)}>✕</button>
+          <button style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 20 }} onClick={() => setSidebarOpen(false)}>✕</button>
         </div>
 
         <div style={styles.sidebarSection}>
-          <button style={styles.newDocBtn} onClick={createDocument} disabled={creating}>
+          <button style={styles.newDocBtn} onClick={() => { setSidebarOpen(false); createDocument() }} disabled={creating}>
             <span style={styles.newDocPlus}>+</span>
             {creating ? 'Creating...' : 'New Document'}
           </button>
-          <button className="sidebar-btn" style={styles.sidebarBtn} onClick={joinWithCode}>
+          <button className="sidebar-btn" style={styles.sidebarBtn} onClick={() => { setSidebarOpen(false); joinWithCode() }}>
             <span>🔗</span> Join with Code
           </button>
         </div>
@@ -184,25 +267,25 @@ export default function Dashboard() {
       </aside>
 
       {/* Main */}
-      <main className="dash-main" style={styles.main}>
+      <main className="dash-main">
         {/* Header */}
-        <div className="dash-header" style={styles.mainHeader}>
+        <div className="dash-header">
           <div>
             <h1 style={styles.mainTitle}>My Documents</h1>
             <p style={styles.mainSubtitle}>{filtered.length} of {documents.length} documents</p>
           </div>
-          <div className="dash-header-right" style={styles.headerRight}>
-            <button onClick={toggleTheme} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+          <div className="dash-header-right">
+            <button className="desktop-only" onClick={toggleTheme} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
               <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.05em' }}>DARK</span>
               <span style={{ fontSize: 16 }}>{document.documentElement.getAttribute('data-theme') === 'light' ? '🌙' : '☀️'}</span>
               <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.05em' }}>LIGHT</span>
             </button>
-            <div className="dash-search" style={styles.searchWrap}>
+            <div style={styles.searchWrap}>
               <span style={styles.searchIcon}>🔍</span>
-              <input className="search-input" style={styles.searchInput} placeholder="Search documents..."
+              <input className="search-input dash-search-input" style={styles.searchInput} placeholder="Search documents..."
                 value={search} onChange={e => setSearch(e.target.value)} />
             </div>
-            <button style={styles.newDocBtnTop} onClick={createDocument}>+ New</button>
+            <button className="desktop-only" style={styles.newDocBtnTop} onClick={createDocument}>+ New</button>
           </div>
         </div>
 
@@ -220,7 +303,7 @@ export default function Dashboard() {
             {!search && <button style={styles.emptyBtn} onClick={createDocument}>Create Document</button>}
           </div>
         ) : (
-          <div className="dash-grid" style={styles.grid}>
+          <div className="dash-grid">
             {filtered.map((doc) => (
               <div key={doc.id} className="doc-card" style={styles.card} onClick={() => navigate('/document/' + doc.id)}>
                 <div style={{ ...styles.cardAccent, background: getDocColor(doc.id) }} />
@@ -251,7 +334,6 @@ export default function Dashboard() {
 
 const styles = {
   page: { display: 'flex', minHeight: '100vh', background: 'var(--bg-primary)', fontFamily: 'Outfit, sans-serif' },
-  sidebar: { width: 250, background: 'var(--bg-secondary)', borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', padding: '20px 12px', flexShrink: 0 },
   sidebarLogo: { display: 'flex', alignItems: 'center', gap: 8, padding: '4px 8px', marginBottom: 24 },
   logoIcon: { width: 32, height: 32, background: 'linear-gradient(135deg, #7c6aff, #5b4de8)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, boxShadow: '0 2px 8px rgba(124,106,255,0.4)' },
   logoText: { fontSize: 18, fontWeight: 800, letterSpacing: '-0.5px' },
@@ -268,11 +350,8 @@ const styles = {
   userName: { fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
   userEmail: { fontSize: 11, color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
   logoutBtn: { background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16, padding: 4 },
-  main: { flex: 1, padding: '32px 40px', overflow: 'auto', marginTop: 0 },
-  mainHeader: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28 },
   mainTitle: { fontSize: 26, fontWeight: 800, letterSpacing: '-0.5px', marginBottom: 4 },
   mainSubtitle: { color: 'var(--text-muted)', fontSize: 13 },
-  headerRight: { display: 'flex', alignItems: 'center', gap: 10 },
   searchWrap: { position: 'relative', display: 'flex', alignItems: 'center' },
   searchIcon: { position: 'absolute', left: 10, fontSize: 13, pointerEvents: 'none' },
   searchInput: { background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 12px 8px 32px', color: 'var(--text-primary)', fontSize: 13, fontFamily: 'Outfit, sans-serif', width: 200, transition: 'all 0.2s' },
@@ -284,7 +363,6 @@ const styles = {
   emptyTitle: { fontSize: 20, fontWeight: 700, marginBottom: 8 },
   emptySubtitle: { color: 'var(--text-muted)', fontSize: 14, marginBottom: 20 },
   emptyBtn: { background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 24px', cursor: 'pointer', fontSize: 14, fontWeight: 600, fontFamily: 'Outfit, sans-serif' },
-  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 },
   card: { background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, cursor: 'pointer', overflow: 'hidden', animation: 'fadeIn 0.3s ease' },
   cardAccent: { height: 4, width: '100%' },
   cardBody: { padding: '16px 18px', display: 'flex', gap: 12 },
