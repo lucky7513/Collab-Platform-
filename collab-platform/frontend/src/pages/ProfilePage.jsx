@@ -105,8 +105,13 @@ export default function ProfilePage() {
         avatar_image: avatarImage || '',
       })
       setNameSuccess('Profile updated successfully!')
-      setProfile(prev => ({ ...prev, name, avatar_color: avatarColor, avatar_image: avatarImage }))
-      setTimeout(() => setNameSuccess(''), 3000)
+setProfile(prev => ({ ...prev, name, avatar_color: avatarColor, avatar_image: avatarImage }))
+// Update auth store so dashboard reflects changes
+useAuthStore.getState().login && useAuthStore.setState(state => ({
+  ...state,
+  user: { ...state.user, name, avatarColor, avatar_image: avatarImage: null }
+}))
+setTimeout(() => setNameSuccess(''), 3000)
     } catch (err) {
       setNameError('Failed to update profile.')
     } finally {
