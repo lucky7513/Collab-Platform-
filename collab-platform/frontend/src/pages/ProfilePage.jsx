@@ -73,12 +73,20 @@ export default function ProfilePage() {
     reader.readAsDataURL(file)
   }
 
-  const removeImage = () => {
+ const removeImage = async () => {
     setAvatarImage(null)
     if (fileInputRef.current) fileInputRef.current.value = ''
-  }
-
-  const saveProfile = async () => {
+    try {
+      await api.patch('/users/me', {
+        name,
+        avatar_color: avatarColor,
+        avatar_image: null,
+      })
+      await fetchProfile()
+    } catch (err) {
+      console.error('Failed to remove image:', err)
+    }
+  }  const saveProfile = async () => {
     setSaving(true)
     setNameError('')
     setNameSuccess('')
