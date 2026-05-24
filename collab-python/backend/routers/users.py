@@ -44,7 +44,7 @@ def update_profile(req: UpdateProfileRequest, user: User = Depends(get_current_u
     if req.avatar_color:
         user.avatar_color = req.avatar_color
     if req.avatar_image is not None:
-    user.avatar_image = req.avatar_image if req.avatar_image != '' else None
+        user.avatar_image = req.avatar_image if req.avatar_image != '' else None
     db.commit()
     db.refresh(user)
     return {
