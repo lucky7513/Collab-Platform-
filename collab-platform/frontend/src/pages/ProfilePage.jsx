@@ -37,7 +37,9 @@ export default function ProfilePage() {
       setProfile(res.data)
       setName(res.data.name)
       setAvatarColor(res.data.avatar_color || '#7c6aff')
-      setAvatarImage(res.data.avatar_image || null)
+      if (res.data.avatar_image) {
+        setAvatarImage(res.data.avatar_image)
+      }
     } catch (err) {
       console.error('Failed to fetch profile:', err)
     } finally {
@@ -73,18 +75,22 @@ export default function ProfilePage() {
     reader.readAsDataURL(file)
   }
 
-const removeImage = async () => {
+  const removeImage = async () => {
     setAvatarImage(null)
     if (fileInputRef.current) fileInputRef.current.value = ''
+    setNameSuccess('')
+    setNameError('')
     try {
       await api.patch('/users/me', {
         name,
         avatar_color: avatarColor,
-        avatar_image: null,
+        avatar_image: '',
       })
-      await fetchProfile()
+      setProfile(prev => ({ ...prev, avatar_image: null }))
+      setNameSuccess('Photo removed successfully!')
+      setTimeout(() => setNameSuccess(''), 3000)
     } catch (err) {
-      console.error('Failed to remove image:', err)
+      setNameError('Failed to remove photo.')
     }
   }
 
@@ -96,10 +102,10 @@ const removeImage = async () => {
       await api.patch('/users/me', {
         name,
         avatar_color: avatarColor,
-        avatar_image: avatarImage,
+        avatar_image: avatarImage || '',
       })
       setNameSuccess('Profile updated successfully!')
-      await fetchProfile()
+      setProfile(prev => ({ ...prev, name, avatar_color: avatarColor, avatar_image: avatarImage }))
       setTimeout(() => setNameSuccess(''), 3000)
     } catch (err) {
       setNameError('Failed to update profile.')
