@@ -45,7 +45,7 @@ export default function ProfilePage() {
     }
   }
 
- const handleImageUpload = (e) => {
+  const handleImageUpload = (e) => {
     const file = e.target.files[0]
     if (!file) return
     if (file.size > 5 * 1024 * 1024) {
@@ -54,7 +54,6 @@ export default function ProfilePage() {
     }
     const reader = new FileReader()
     reader.onloadend = () => {
-      // Compress image using canvas
       const img = new Image()
       img.onload = () => {
         const canvas = document.createElement('canvas')
@@ -73,6 +72,7 @@ export default function ProfilePage() {
     }
     reader.readAsDataURL(file)
   }
+
   const removeImage = () => {
     setAvatarImage(null)
     if (fileInputRef.current) fileInputRef.current.value = ''
@@ -88,17 +88,12 @@ export default function ProfilePage() {
         avatar_color: avatarColor,
         avatar_image: avatarImage,
       })
-console.log('Save response:', res.data)
       setNameSuccess('Profile updated successfully!')
-await fetchProfile()
-setTimeout(() => setNameSuccess(''), 3000)
-   } catch (err) {
-      console.error('Save error:', err)
-      if (err && err !== 'undefined') {
-        setNameError('Failed to update profile: ' + err)
-      }
-    }
-     finally {
+      await fetchProfile()
+      setTimeout(() => setNameSuccess(''), 3000)
+    } catch (err) {
+      setNameError('Failed to update profile.')
+    } finally {
       setSaving(false)
     }
   }
@@ -173,7 +168,7 @@ setTimeout(() => setNameSuccess(''), 3000)
         <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 16, padding: 28, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
           <div style={{ position: 'relative', flexShrink: 0 }}>
             {avatarImage ? (
-              <img src={avatarImage} alt="avatar" style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', boxShadow: `0 4px 16px rgba(0,0,0,0.3)` }} />
+              <img src={avatarImage} alt="avatar" style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', boxShadow: '0 4px 16px rgba(0,0,0,0.3)' }} />
             ) : (
               <div style={{ width: 72, height: 72, borderRadius: '50%', background: avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, fontWeight: 800, color: '#fff', boxShadow: `0 4px 16px ${avatarColor}60` }}>
                 {getInitials(profile?.name)}
@@ -214,12 +209,9 @@ setTimeout(() => setNameSuccess(''), 3000)
         {/* Profile Tab */}
         {activeTab === 'profile' && (
           <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 16, padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
-
-            {/* Avatar Upload */}
             <div>
               <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 12 }}>Profile Picture</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                {/* Preview */}
                 <div style={{ position: 'relative', flexShrink: 0 }}>
                   {avatarImage ? (
                     <img src={avatarImage} alt="avatar preview" style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--accent)' }} />
@@ -248,14 +240,12 @@ setTimeout(() => setNameSuccess(''), 3000)
 
             <div style={{ height: 1, background: 'var(--border)' }} />
 
-            {/* Name */}
             <div>
               <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>Display Name</label>
               <input className="profile-input" style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: '11px 14px', color: 'var(--text-primary)', fontSize: 14, fontFamily: 'Outfit, sans-serif', transition: 'all 0.2s', boxSizing: 'border-box' }}
                 value={name} onChange={e => setName(e.target.value)} placeholder="Your name" />
             </div>
 
-            {/* Email */}
             <div>
               <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>Email Address</label>
               <input style={{ width: '100%', background: 'var(--bg-hover)', border: '1px solid var(--border)', borderRadius: 8, padding: '11px 14px', color: 'var(--text-muted)', fontSize: 14, fontFamily: 'Outfit, sans-serif', boxSizing: 'border-box', cursor: 'not-allowed' }}
@@ -263,7 +253,6 @@ setTimeout(() => setNameSuccess(''), 3000)
               <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Email cannot be changed</p>
             </div>
 
-            {/* Avatar Color */}
             {!avatarImage && (
               <div>
                 <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 12 }}>Avatar Color <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400 }}>(used when no photo)</span></label>
