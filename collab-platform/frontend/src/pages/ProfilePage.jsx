@@ -109,7 +109,7 @@ setProfile(prev => ({ ...prev, name, avatar_color: avatarColor, avatar_image: av
 // Update auth store so dashboard reflects changes
 useAuthStore.getState().login && useAuthStore.setState(state => ({
   ...state,
-  user: { ...state.user, name, avatarColor, avatar_image: avatarImage: null }
+  user: { ...state.user, name, avatarColor, avatar_image: avatarImage }
 }))
 setTimeout(() => setNameSuccess(''), 3000)
     } catch (err) {
