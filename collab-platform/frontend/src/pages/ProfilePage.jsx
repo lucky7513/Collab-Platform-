@@ -73,7 +73,7 @@ export default function ProfilePage() {
     reader.readAsDataURL(file)
   }
 
- const removeImage = async () => {
+const removeImage = async () => {
     setAvatarImage(null)
     if (fileInputRef.current) fileInputRef.current.value = ''
     try {
@@ -86,7 +86,9 @@ export default function ProfilePage() {
     } catch (err) {
       console.error('Failed to remove image:', err)
     }
-  }  const saveProfile = async () => {
+  }
+
+  const saveProfile = async () => {
     setSaving(true)
     setNameError('')
     setNameSuccess('')
