@@ -1,22 +1,19 @@
-import os
 from functools import lru_cache
+import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
 class Settings:
     DATABASE_URL: str = os.getenv("DATABASE_URL", "")
-    JWT_SECRET: str = os.getenv("JWT_SECRET", "secret")
-    JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
-    JWT_EXPIRE_MINUTES: int = int(os.getenv("JWT_EXPIRE_MINUTES", "1440"))
-    GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
-    ANTHROPIC_API_KEY: str = os.getenv("ANTHROPIC_API_KEY", "")
-    CORS_ORIGINS: str = os.getenv("CORS_ORIGINS", "*")
-
-    @property
-    def cors_origins_list(self):
-        return [o.strip() for o in self.CORS_ORIGINS.split(",")]
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "supersecretkey")
+    JWT_SECRET: str = os.getenv("SECRET_KEY", "supersecretkey")
+    ALGORITHM: str = "HS256"
+    JWT_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    JWT_EXPIRE_MINUTES: int = 60
+    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
 
 @lru_cache()
-def get_settings() -> Settings:
+def get_settings():
     return Settings()
