@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import Quill from 'quill'
 import QuillCursors from 'quill-cursors'
@@ -30,10 +30,14 @@ export default function DocumentPage() {
   const [aiLoading, setAiLoading] = useState(false)
   const [aiResult, setAiResult] = useState('')
   const [copied, setCopied] = useState(false)
+  const [myRole, setMyRole] = useState(null)
 
   useEffect(() => {
     api.get('/documents/' + id)
-      .then(res => setTitle(res.data.title))
+      .then(res => {
+        setTitle(res.data.title)
+        setMyRole(res.data.role)
+      })
       .catch(() => navigate('/dashboard'))
   }, [id])
 
@@ -60,16 +64,19 @@ export default function DocumentPage() {
     ydocRef.current = ydoc
     const ytext = ydoc.getText('quill')
     new QuillBinding(ytext, quill)
-// Load saved content from database
-api.get('/documents/' + id).then(res => {
-  if (res.data.content && res.data.content.trim() && ytext.length === 0) {
-    ytext.insert(0, res.data.content)
-  }
-}
+
+    // Load saved content from database
+    api.get('/documents/' + id).then(res => {
+      if (res.data.content && res.data.content.trim() && ytext.length === 0) {
+        ytext.insert(0, res.data.content)
+      }
+    })
+
     const cleanToken = token ? token.split('/')[0] : ''
     const wsBase = import.meta.env.VITE_WS_URL || 'ws://127.0.0.1:8000'
-const wsUrl = wsBase + '/ws/collab/' + id + '?token=' + cleanToken
+    const wsUrl = wsBase + '/ws/collab/' + id + '?token=' + cleanToken
     console.log('Connecting to:', wsUrl)
+
     const connectWS = () => {
       const ws = new WebSocket(wsUrl)
       wsRef.current = ws
@@ -90,6 +97,7 @@ const wsUrl = wsBase + '/ws/collab/' + id + '?token=' + cleanToken
       ws.onerror = (e) => console.error('WS error:', e)
     }
     connectWS()
+
     ydoc.on('update', (update, origin) => {
       if (origin === 'remote') return
       const ws = wsRef.current
@@ -98,6 +106,7 @@ const wsUrl = wsBase + '/ws/collab/' + id + '?token=' + cleanToken
         ws.send(JSON.stringify({ type: 'doc-update', update: encoded }))
       }
     })
+
     quill.on('text-change', (delta, oldDelta, source) => {
       if (source !== 'user') return
       setSaveStatus('unsaved')
@@ -109,6 +118,7 @@ const wsUrl = wsBase + '/ws/collab/' + id + '?token=' + cleanToken
           .catch(() => setSaveStatus('unsaved'))
       }, 2000)
     })
+
     return () => {
       if (wsRef.current) wsRef.current.close()
       ydoc.destroy()
@@ -125,7 +135,9 @@ const wsUrl = wsBase + '/ws/collab/' + id + '?token=' + cleanToken
     const quill = quillRef.current
     if (!quill) return
     const selection = quill.getSelection()
-    const text = selection && selection.length > 0 ? quill.getText(selection.index, selection.length) : quill.getText()
+    const text = selection && selection.length > 0
+      ? quill.getText(selection.index, selection.length)
+      : quill.getText()
     if (!text.trim()) return
     setAiLoading(true)
     setAiResult('')
@@ -133,10 +145,24 @@ const wsUrl = wsBase + '/ws/collab/' + id + '?token=' + cleanToken
       const res = await api.post('/ai/process', { action, text })
       setAiResult(res.data.result)
     } catch (err) {
-      setAiResult('AI service unavailable.')
+      setAiResult('AI service unavailable. Please try again.')
     } finally {
       setAiLoading(false)
     }
+  }
+
+  const exportPDF = () => {
+    const quill = quillRef.current
+    if (!quill) return
+    const content = quill.root.innerHTML
+    const win = window.open('', '_blank')
+    win.document.write(`
+      <html><head><title>${title}</title>
+      <style>body{font-family:sans-serif;padding:40px;max-width:800px;margin:0 auto}</style>
+      </head><body>${content}</body></html>
+    `)
+    win.document.close()
+    win.print()
   }
 
   const saveStatusColor = saveStatus === 'saved' ? '#2ecc71' : saveStatus === 'saving' ? '#f39c12' : '#e74c3c'
@@ -151,48 +177,101 @@ const wsUrl = wsBase + '/ws/collab/' + id + '?token=' + cleanToken
           ) : (
             <h1 style={{ fontSize: 16, fontWeight: 600, cursor: 'pointer', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} onClick={() => setEditingTitle(true)}>{title || 'Untitled Document'}</h1>
           )}
-          <span style={{ fontSize: 12, color: saveStatusColor }}>{saveStatus === 'saved' ? 'Saved' : saveStatus === 'saving' ? 'Saving...' : 'Unsaved'}</span>
-          <span style={{ fontSize: 11, color: connected ? '#2ecc71' : '#e74c3c' }}>{connected ? 'â— Live' : 'â—‹ Connecting...'}</span>
+          <span style={{ fontSize: 12, color: saveStatusColor }}>
+            {saveStatus === 'saved' ? '✓ Saved' : saveStatus === 'saving' ? 'Saving...' : '● Unsaved'}
+          </span>
+          <span style={{ fontSize: 11, color: connected ? '#2ecc71' : '#e74c3c' }}>
+            {connected ? '● Live' : '○ Connecting...'}
+          </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             {onlineUsers.slice(0, 5).map((u, i) => (
               <div key={i} title={u.userName} style={{ width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, border: '2px solid var(--bg-secondary)', color: '#fff', background: u.userColor || '#7c6aff', marginLeft: i > 0 ? -8 : 0 }}>
-                {u.userName ? u.userName[0].toUpperCase() : '?'}
+                {u.userName ? u.userName.split(' ').map(n => n[0]).join('').toUpperCase() : '?'}
               </div>
             ))}
             {onlineUsers.length > 0 && <span style={{ fontSize: 12, color: 'var(--text-secondary)', marginLeft: 8 }}>{onlineUsers.length} online</span>}
           </div>
-          <button style={{ background: 'var(--accent-dim)', color: 'var(--accent-light)', border: '1px solid rgba(124,106,255,0.3)', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif' }} onClick={() => setAiOpen(!aiOpen)}>AI Assistant</button>
-          <button style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif' }} onClick={() => { api.post('/documents/' + id + '/generate-code').then(res => { navigator.clipboard.writeText(res.data.code); alert('Room code: ' + res.data.code + '\n\nCode copied to clipboard! Share it with your collaborator.') }).catch(() => alert('Failed to generate code')) }}>ðŸ”‘ Get Room Code</button>
+          <button style={{ background: 'var(--accent-dim)', color: 'var(--accent-light)', border: '1px solid rgba(124,106,255,0.3)', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif' }} onClick={() => { setAiOpen(!aiOpen); setAiResult('') }}>
+            🤖 AI
+          </button>
+          <button style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif' }} onClick={exportPDF}>
+            📄 Export PDF
+          </button>
+          <button style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif', fontWeight: 600 }} onClick={() => { api.post('/documents/' + id + '/generate-code').then(res => { navigator.clipboard.writeText(res.data.code); alert('Room code: ' + res.data.code + '\n\nCopied to clipboard!') }).catch(() => alert('Failed to generate code')) }}>
+            🔑 Share
+          </button>
         </div>
       </header>
+
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
-          <div ref={editorRef} />
+          <div ref={editorRef} style={{ flex: 1 }} />
         </div>
+
         {aiOpen && (
-          <aside style={{ width: 300, background: 'var(--bg-secondary)', borderLeft: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 12, padding: 16, overflow: 'auto' }}>
+          <aside style={{ width: 300, background: 'var(--bg-secondary)', borderLeft: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 12, padding: 16, overflow: 'auto', flexShrink: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontWeight: 700 }}>AI Assistant</span>
-              <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 14 }} onClick={() => setAiOpen(false)}>X</button>
+              <span style={{ fontWeight: 700, fontSize: 15 }}>✦ AI Assistant</span>
+              <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 18, lineHeight: 1 }} onClick={() => { setAiOpen(false); setAiResult('') }}>×</button>
             </div>
-            <p style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Select text then choose an action:</p>
+            <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0 }}>Select text in the document, then choose an action:</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {[{id:'summarize',label:'Summarize'},{id:'rephrase',label:'Rephrase'},{id:'continue',label:'Continue'},{id:'grammar',label:'Fix Grammar'},{id:'shorten',label:'Shorten'},{id:'bullets',label:'Bulletize'}].map(action => (
-                <button key={action.id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 6, padding: '10px 12px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Outfit, sans-serif', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }} onClick={() => handleAI(action.id)} disabled={aiLoading}>{action.label}</button>
+              {[
+                { id: 'summarize', label: '📋 Summarize', desc: 'Condense the text' },
+                { id: 'rephrase', label: '✏️ Rephrase', desc: 'Reword it clearly' },
+                { id: 'continue', label: '➡️ Continue', desc: 'Extend the writing' },
+                { id: 'grammar', label: '✓ Fix Grammar', desc: 'Correct errors' },
+                { id: 'shorten', label: '✂️ Shorten', desc: 'Make it concise' },
+                { id: 'bullets', label: '• Bulletize', desc: 'Convert to bullet points' },
+              ].map(action => (
+                <button
+                  key={action.id}
+                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', cursor: aiLoading ? 'not-allowed' : 'pointer', textAlign: 'left', fontFamily: 'Outfit, sans-serif', fontSize: 13, fontWeight: 600, color: aiLoading ? 'var(--text-muted)' : 'var(--text-primary)', opacity: aiLoading ? 0.6 : 1, transition: 'all 0.15s' }}
+                  onClick={() => handleAI(action.id)}
+                  disabled={aiLoading}
+                >
+                  {action.label}
+                  <span style={{ display: 'block', fontSize: 11, fontWeight: 400, color: 'var(--text-secondary)', marginTop: 2 }}>{action.desc}</span>
+                </button>
               ))}
             </div>
-            {aiLoading && <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>Thinking...</p>}
+
+            {aiLoading && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-secondary)', fontSize: 13 }}>
+                <div style={{ width: 14, height: 14, border: '2px solid var(--border)', borderTop: '2px solid var(--accent)', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+                Thinking...
+              </div>
+            )}
+
             {aiResult && !aiLoading && (
               <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: 12 }}>
-                <div style={{ fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap', color: 'var(--text-primary)' }}>{aiResult}</div>
+                <div style={{ fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap', color: 'var(--text-primary)', maxHeight: 300, overflowY: 'auto' }}>{aiResult}</div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                  <button style={{ flex: 1, background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 6, padding: '8px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }} onClick={() => { const quill = quillRef.current; if (quill) { const sel = quill.getSelection() || { index: quill.getLength(), length: 0 }; quill.insertText(sel.index + sel.length, '\n' + aiResult) } }}>Insert</button>
-                  <button style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, padding: '8px 12px', fontSize: 12, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }} onClick={() => { navigator.clipboard.writeText(aiResult); setCopied(true); setTimeout(() => setCopied(false), 2000) }}>{copied ? 'Copied!' : 'Copy'}</button>
+                  <button
+                    style={{ flex: 1, background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 6, padding: '8px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}
+                    onClick={() => {
+                      const quill = quillRef.current
+                      if (quill) {
+                        const sel = quill.getSelection() || { index: quill.getLength(), length: 0 }
+                        quill.insertText(sel.index + sel.length, '\n' + aiResult)
+                      }
+                    }}
+                  >Insert</button>
+                  <button
+                    style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, padding: '8px 12px', fontSize: 12, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}
+                    onClick={() => { navigator.clipboard.writeText(aiResult); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
+                  >{copied ? '✓ Copied!' : 'Copy'}</button>
+                  <button
+                    style={{ background: 'var(--bg-hover)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 6, padding: '8px 12px', fontSize: 12, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}
+                    onClick={() => setAiResult('')}
+                  >Clear</button>
                 </div>
               </div>
             )}
+
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
           </aside>
         )}
       </div>
