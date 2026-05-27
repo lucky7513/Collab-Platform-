@@ -11,6 +11,9 @@ export default function Dashboard() {
   const [creating, setCreating] = useState(false)
   const [search, setSearch] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [joinModal, setJoinModal] = useState(false)
+  const [joinCode, setJoinCode] = useState('')
+  const [joining, setJoining] = useState(false)
   const { user, logout } = useAuthStore()
   const navigate = useNavigate()
 
@@ -62,13 +65,17 @@ export default function Dashboard() {
   }
 
   const joinWithCode = async () => {
-    const code = window.prompt('Enter 6-digit room code:')
-    if (!code) return
+    if (!joinCode.trim()) return
+    setJoining(true)
     try {
-      const res = await api.get('/documents/join/' + code.toUpperCase())
+      const res = await api.get('/documents/join/' + joinCode.toUpperCase())
       navigate('/document/' + res.data.document_id)
     } catch (err) {
       alert('Invalid code! Please try again.')
+    } finally {
+      setJoining(false)
+      setJoinModal(false)
+      setJoinCode('')
     }
   }
 
@@ -126,30 +133,10 @@ export default function Dashboard() {
           transition: transform 0.3s ease;
         }
 
-        .dash-main {
-          flex: 1;
-          padding: 32px 40px;
-          overflow: auto;
-        }
-
-        .dash-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-          gap: 16px;
-        }
-
-        .dash-header {
-          display: flex;
-          align-items: flex-start;
-          justify-content: space-between;
-          margin-bottom: 28px;
-        }
-
-        .dash-header-right {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
+        .dash-main { flex: 1; padding: 32px 40px; overflow: auto; }
+        .dash-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+        .dash-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 28px; }
+        .dash-header-right { display: flex; align-items: center; gap: 10px; }
 
         .mobile-topbar {
           display: none;
@@ -164,53 +151,19 @@ export default function Dashboard() {
           padding: 0 16px;
         }
 
-        .dash-overlay {
-          display: none;
-          position: fixed;
-          inset: 0;
-          background: rgba(0,0,0,0.5);
-          z-index: 999;
-        }
+        .dash-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; }
 
         @media (max-width: 768px) {
-          .dash-sidebar {
-            position: fixed !important;
-            left: 0; top: 0;
-            height: 100vh;
-            z-index: 1000;
-            transform: translateX(-100%);
-            box-shadow: 4px 0 20px rgba(0,0,0,0.4);
-          }
-          .dash-sidebar.open {
-            transform: translateX(0) !important;
-          }
-          .dash-overlay.open {
-            display: block !important;
-          }
-          .mobile-topbar {
-            display: flex !important;
-          }
-          .dash-main {
-            padding: 72px 16px 16px 16px !important;
-          }
-          .dash-header {
-            flex-direction: column !important;
-            align-items: stretch !important;
-            gap: 12px !important;
-          }
-          .dash-header-right {
-            flex-wrap: wrap !important;
-            gap: 8px !important;
-          }
-          .dash-search-input {
-            width: 100% !important;
-          }
-          .dash-grid {
-            grid-template-columns: 1fr !important;
-          }
-          .desktop-only {
-            display: none !important;
-          }
+          .dash-sidebar { position: fixed !important; left: 0; top: 0; height: 100vh; z-index: 1000; transform: translateX(-100%); box-shadow: 4px 0 20px rgba(0,0,0,0.4); }
+          .dash-sidebar.open { transform: translateX(0) !important; }
+          .dash-overlay.open { display: block !important; }
+          .mobile-topbar { display: flex !important; }
+          .dash-main { padding: 72px 16px 16px 16px !important; }
+          .dash-header { flex-direction: column !important; align-items: stretch !important; gap: 12px !important; }
+          .dash-header-right { flex-wrap: wrap !important; gap: 8px !important; }
+          .dash-search-input { width: 100% !important; }
+          .dash-grid { grid-template-columns: 1fr !important; }
+          .desktop-only { display: none !important; }
         }
       `}</style>
 
@@ -240,7 +193,7 @@ export default function Dashboard() {
             <span style={styles.newDocPlus}>+</span>
             {creating ? 'Creating...' : 'New Document'}
           </button>
-          <button className="sidebar-btn" style={styles.sidebarBtn} onClick={() => { setSidebarOpen(false); joinWithCode() }}>
+          <button className="sidebar-btn" style={styles.sidebarBtn} onClick={() => { setSidebarOpen(false); setJoinModal(true) }}>
             <span>🔗</span> Join with Code
           </button>
         </div>
@@ -254,7 +207,14 @@ export default function Dashboard() {
         </div>
 
         <div style={styles.sidebarBottom}>
-        <div style={{ ...styles.userAvatar, cursor: 'pointer' }} onClick={() => navigate('/profile')} title="View Profile">{getInitials(user?.name)}</div>
+          {/* Avatar — shows profile picture if available */}
+          <div style={{ ...styles.userAvatar, cursor: 'pointer', padding: 0, overflow: 'hidden' }} onClick={() => navigate('/profile')} title="View Profile">
+            {user?.avatar_image ? (
+              <img src={user.avatar_image} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+            ) : (
+              getInitials(user?.name)
+            )}
+          </div>
           <div style={styles.userInfo}>
             <p style={styles.userName}>{user?.name || ''}</p>
             <p style={styles.userEmail}>{user?.email || ''}</p>
@@ -268,7 +228,6 @@ export default function Dashboard() {
 
       {/* Main */}
       <main className="dash-main">
-        {/* Header */}
         <div className="dash-header">
           <div>
             <h1 style={styles.mainTitle}>My Documents</h1>
@@ -289,7 +248,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Content */}
         {loading ? (
           <div style={styles.loadingWrap}>
             <div style={styles.spinner} />
@@ -328,6 +286,32 @@ export default function Dashboard() {
           </div>
         )}
       </main>
+
+      {/* Join with Code Modal */}
+      {joinModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 20px' }}>
+          <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 16, padding: 24, width: '100%', maxWidth: 360, display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800 }}>🔗 Join Document</h3>
+              <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 20 }} onClick={() => { setJoinModal(false); setJoinCode('') }}>✕</button>
+            </div>
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--text-muted)' }}>Enter the 6-digit room code shared with you.</p>
+            <input
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: '12px 16px', color: 'var(--text-primary)', fontSize: 20, fontFamily: 'monospace', fontWeight: 700, letterSpacing: 6, textAlign: 'center', outline: 'none' }}
+              placeholder="ABC123"
+              value={joinCode}
+              onChange={e => setJoinCode(e.target.value.toUpperCase())}
+              maxLength={6}
+              autoFocus
+              onKeyDown={e => e.key === 'Enter' && joinWithCode()}
+            />
+            <button style={{ background: 'linear-gradient(135deg, #7c6aff, #5b4de8)', color: '#fff', border: 'none', borderRadius: 8, padding: '12px', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'Outfit, sans-serif', opacity: joining ? 0.7 : 1 }}
+              onClick={joinWithCode} disabled={joining}>
+              {joining ? 'Joining...' : 'Join Document →'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
