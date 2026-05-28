@@ -5,7 +5,6 @@ import AuthPage from './pages/AuthPage'
 import Dashboard from './pages/Dashboard'
 import DocumentPage from './pages/DocumentPage'
 import MemoriesPage from './pages/MemoriesPage'
-import AIFeaturePanel from './components/AIFeaturePanel'
 import './styles/global.css'
 
 function PrivateRoute({ children }) {
@@ -13,6 +12,7 @@ function PrivateRoute({ children }) {
   return isAuthenticated ? children : <Navigate to="/login" replace />
 }
 
+<<<<<<< HEAD
 function DashboardWithAI() {
   return (
     <>
@@ -24,16 +24,20 @@ function DashboardWithAI() {
   )
 }
 
+=======
+>>>>>>> parent of 82604bc (Fix DocumentPage bugs and improve AI panel)
 export default function App() {
   const { initAuth } = useAuthStore()
+
   useEffect(() => {
     initAuth()
   }, [])
+
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<AuthPage />} />
-        <Route path="/dashboard" element={<PrivateRoute><DashboardWithAI /></PrivateRoute>} />
+        <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
         <Route path="/document/:id" element={<PrivateRoute><DocumentPage /></PrivateRoute>} />
         <Route path="/memories" element={<PrivateRoute><MemoriesPage /></PrivateRoute>} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />

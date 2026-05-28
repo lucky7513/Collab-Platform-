@@ -32,10 +32,6 @@ export default function DocumentPage() {
   const [aiLoading, setAiLoading] = useState(false)
   const [aiResult, setAiResult] = useState('')
   const [copied, setCopied] = useState(false)
-<<<<<<< HEAD
-<<<<<<< HEAD
-  const [myRole, setMyRole] = useState(null)
-=======
   const [toasts, setToasts] = useState([])
   const [chatMessages, setChatMessages] = useState([])
   const [chatInput, setChatInput] = useState('')
@@ -50,9 +46,6 @@ export default function DocumentPage() {
     setToasts(prev => [...prev, { id: toastId, message, type }])
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== toastId)), 3000)
   }
->>>>>>> 7ccae6caacc5206c5f0659b0ca2e40fd9eedfb2d
-=======
->>>>>>> parent of 82604bc (Fix DocumentPage bugs and improve AI panel)
 
   useEffect(() => {
     api.get('/documents/' + id)
@@ -100,40 +93,17 @@ export default function DocumentPage() {
     ydocRef.current = ydoc
     const ytext = ydoc.getText('quill')
     new QuillBinding(ytext, quill)
-<<<<<<< HEAD
 
-<<<<<<< HEAD
-    // Load saved content from database
-=======
->>>>>>> 7ccae6caacc5206c5f0659b0ca2e40fd9eedfb2d
     api.get('/documents/' + id).then(res => {
       if (res.data.content && res.data.content.trim() && ytext.length === 0) {
         ytext.insert(0, res.data.content)
       }
     })
 
-<<<<<<< HEAD
-=======
-// Load saved content from database
-api.get('/documents/' + id).then(res => {
-  if (res.data.content && res.data.content.trim() && ytext.length === 0) {
-    ytext.insert(0, res.data.content)
-  }
-}
->>>>>>> parent of 82604bc (Fix DocumentPage bugs and improve AI panel)
-    const cleanToken = token ? token.split('/')[0] : ''
-    const wsBase = import.meta.env.VITE_WS_URL || 'ws://127.0.0.1:8000'
-const wsUrl = wsBase + '/ws/collab/' + id + '?token=' + cleanToken
-    console.log('Connecting to:', wsUrl)
-<<<<<<< HEAD
-=======
     const cleanToken = token ? token.replace(/\/.*$/, '') : ''
     const wsBase = import.meta.env.VITE_WS_URL || 'wss://collab-platform-62rd.onrender.com'
     const wsUrl = wsBase + '/ws/collab/' + id + '?token=' + cleanToken
->>>>>>> 7ccae6caacc5206c5f0659b0ca2e40fd9eedfb2d
 
-=======
->>>>>>> parent of 82604bc (Fix DocumentPage bugs and improve AI panel)
     const connectWS = () => {
       const ws = new WebSocket(wsUrl)
       wsRef.current = ws
@@ -166,6 +136,7 @@ const wsUrl = wsBase + '/ws/collab/' + id + '?token=' + cleanToken
     }
 
     connectWS()
+
     ydoc.on('update', (update, origin) => {
       if (origin === 'remote') return
       const ws = wsRef.current
@@ -174,6 +145,7 @@ const wsUrl = wsBase + '/ws/collab/' + id + '?token=' + cleanToken
         ws.send(JSON.stringify({ type: 'doc-update', update: encoded }))
       }
     })
+
     quill.on('text-change', (delta, oldDelta, source) => {
       if (source !== 'user') return
       setSaveStatus('unsaved')
@@ -185,6 +157,7 @@ const wsUrl = wsBase + '/ws/collab/' + id + '?token=' + cleanToken
           .catch(() => setSaveStatus('unsaved'))
       }, 2000)
     })
+
     return () => {
       if (wsRef.current) wsRef.current.close()
       ydoc.destroy()
@@ -288,15 +261,6 @@ const wsUrl = wsBase + '/ws/collab/' + id + '?token=' + cleanToken
               {title || 'Untitled Document'}
             </h1>
           )}
-<<<<<<< HEAD
-<<<<<<< HEAD
-          <span style={{ fontSize: 12, color: saveStatusColor }}>
-            {saveStatus === 'saved' ? '✓ Saved' : saveStatus === 'saving' ? 'Saving...' : '● Unsaved'}
-          </span>
-          <span style={{ fontSize: 11, color: connected ? '#2ecc71' : '#e74c3c' }}>
-            {connected ? '● Live' : '○ Connecting...'}
-          </span>
-=======
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
             {isViewer && (
               <span style={{ fontSize: 11, background: 'rgba(243,156,18,0.15)', color: '#f39c12', border: '1px solid rgba(243,156,18,0.3)', borderRadius: 6, padding: '2px 8px', fontWeight: 600 }}>👁 View Only</span>
@@ -309,48 +273,18 @@ const wsUrl = wsBase + '/ws/collab/' + id + '?token=' + cleanToken
               {connected ? 'Live' : 'Offline'}
             </span>
           </div>
->>>>>>> 7ccae6caacc5206c5f0659b0ca2e40fd9eedfb2d
-=======
-          <span style={{ fontSize: 12, color: saveStatusColor }}>{saveStatus === 'saved' ? 'Saved' : saveStatus === 'saving' ? 'Saving...' : 'Unsaved'}</span>
-          <span style={{ fontSize: 11, color: connected ? '#2ecc71' : '#e74c3c' }}>{connected ? 'â— Live' : 'â—‹ Connecting...'}</span>
->>>>>>> parent of 82604bc (Fix DocumentPage bugs and improve AI panel)
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           {/* Online users */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-<<<<<<< HEAD
-            {onlineUsers.slice(0, 5).map((u, i) => (
-              <div key={i} title={u.userName} style={{ width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, border: '2px solid var(--bg-secondary)', color: '#fff', background: u.userColor || '#7c6aff', marginLeft: i > 0 ? -8 : 0 }}>
-<<<<<<< HEAD
-                {u.userName ? u.userName.split(' ').map(n => n[0]).join('').toUpperCase() : '?'}
-=======
             {onlineUsers.slice(0, 4).map((u, i) => (
               <div key={i} title={u.userName} style={{ width: 26, height: 26, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, border: '2px solid var(--bg-secondary)', color: '#fff', background: u.userColor || '#7c6aff', marginLeft: i > 0 ? -6 : 0, boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
                 {u.userName ? u.userName[0].toUpperCase() : '?'}
->>>>>>> 7ccae6caacc5206c5f0659b0ca2e40fd9eedfb2d
-=======
-                {u.userName ? u.userName[0].toUpperCase() : '?'}
->>>>>>> parent of 82604bc (Fix DocumentPage bugs and improve AI panel)
               </div>
             ))}
             {onlineUsers.length > 0 && <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 6 }}>{onlineUsers.length} online</span>}
           </div>
-<<<<<<< HEAD
-<<<<<<< HEAD
-          <button style={{ background: 'var(--accent-dim)', color: 'var(--accent-light)', border: '1px solid rgba(124,106,255,0.3)', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif' }} onClick={() => { setAiOpen(!aiOpen); setAiResult('') }}>
-            🤖 AI
-          </button>
-          <button style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif' }} onClick={exportPDF}>
-            📄 Export PDF
-          </button>
-          <button style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif', fontWeight: 600 }} onClick={() => { api.post('/documents/' + id + '/generate-code').then(res => { navigator.clipboard.writeText(res.data.code); alert('Room code: ' + res.data.code + '\n\nCopied to clipboard!') }).catch(() => alert('Failed to generate code')) }}>
-            🔑 Share
-          </button>
-        </div>
-      </header>
-
-=======
 
           <div style={{ width: 1, height: 20, background: 'var(--border)' }} />
 
@@ -389,49 +323,9 @@ const wsUrl = wsBase + '/ws/collab/' + id + '?token=' + cleanToken
       </header>
 
       {/* Body */}
->>>>>>> 7ccae6caacc5206c5f0659b0ca2e40fd9eedfb2d
-=======
-          <button style={{ background: 'var(--accent-dim)', color: 'var(--accent-light)', border: '1px solid rgba(124,106,255,0.3)', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif' }} onClick={() => setAiOpen(!aiOpen)}>AI Assistant</button>
-          <button style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif' }} onClick={() => { api.post('/documents/' + id + '/generate-code').then(res => { navigator.clipboard.writeText(res.data.code); alert('Room code: ' + res.data.code + '\n\nCode copied to clipboard! Share it with your collaborator.') }).catch(() => alert('Failed to generate code')) }}>ðŸ”‘ Get Room Code</button>
-        </div>
-      </header>
->>>>>>> parent of 82604bc (Fix DocumentPage bugs and improve AI panel)
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         {/* Editor */}
         <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
-<<<<<<< HEAD
-<<<<<<< HEAD
-          <div ref={editorRef} style={{ flex: 1 }} />
-=======
-          <div ref={editorRef} />
->>>>>>> parent of 82604bc (Fix DocumentPage bugs and improve AI panel)
-        </div>
-        {aiOpen && (
-          <aside style={{ width: 300, background: 'var(--bg-secondary)', borderLeft: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 12, padding: 16, overflow: 'auto' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontWeight: 700 }}>AI Assistant</span>
-              <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 14 }} onClick={() => setAiOpen(false)}>X</button>
-            </div>
-            <p style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Select text then choose an action:</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {[{id:'summarize',label:'Summarize'},{id:'rephrase',label:'Rephrase'},{id:'continue',label:'Continue'},{id:'grammar',label:'Fix Grammar'},{id:'shorten',label:'Shorten'},{id:'bullets',label:'Bulletize'}].map(action => (
-                <button key={action.id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 6, padding: '10px 12px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Outfit, sans-serif', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }} onClick={() => handleAI(action.id)} disabled={aiLoading}>{action.label}</button>
-              ))}
-            </div>
-            {aiLoading && <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>Thinking...</p>}
-            {aiResult && !aiLoading && (
-              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: 12 }}>
-                <div style={{ fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap', color: 'var(--text-primary)' }}>{aiResult}</div>
-                <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                  <button style={{ flex: 1, background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 6, padding: '8px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }} onClick={() => { const quill = quillRef.current; if (quill) { const sel = quill.getSelection() || { index: quill.getLength(), length: 0 }; quill.insertText(sel.index + sel.length, '\n' + aiResult) } }}>Insert</button>
-                  <button style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, padding: '8px 12px', fontSize: 12, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }} onClick={() => { navigator.clipboard.writeText(aiResult); setCopied(true); setTimeout(() => setCopied(false), 2000) }}>{copied ? 'Copied!' : 'Copy'}</button>
-                </div>
-              </div>
-            )}
-<<<<<<< HEAD
-
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-=======
           <div className="print-area" ref={editorRef} style={{ flex: 1 }} />
         </div>
 
@@ -541,9 +435,6 @@ const wsUrl = wsBase + '/ws/collab/' + id + '?token=' + cleanToken
                 </div>
               )}
             </div>
->>>>>>> 7ccae6caacc5206c5f0659b0ca2e40fd9eedfb2d
-=======
->>>>>>> parent of 82604bc (Fix DocumentPage bugs and improve AI panel)
           </aside>
         )}
       </div>
