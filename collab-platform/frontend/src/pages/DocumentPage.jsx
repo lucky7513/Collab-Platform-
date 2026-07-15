@@ -421,7 +421,7 @@ export default function DocumentPage() {
                     <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)' }}>RESULT</span>
                     <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 11 }} onClick={() => setAiResult('')}>✕ Clear</button>
                   </div>
-                  <div style={{ padding: 12, fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap', color: 'var(--text-primary)', maxHeight: 200, overflow: 'auto' }}>{aiResult}</div>
+                 <div style={{ padding: 12, fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap', color: 'var(--text-primary)', maxHeight: 200, overflow: 'auto', WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>{aiResult}</div>
                   <div style={{ display: 'flex', gap: 8, padding: '8px 12px', borderTop: '1px solid var(--border)' }}>
                     <button style={{ flex: 1, background: 'linear-gradient(135deg, #7c6aff, #5b4de8)', color: '#fff', border: 'none', borderRadius: 6, padding: '7px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}
                       onClick={() => { const quill = quillRef.current; if (quill) { const sel = quill.getSelection() || { index: quill.getLength(), length: 0 }; quill.insertText(sel.index + sel.length, '\n' + aiResult) } }}>
