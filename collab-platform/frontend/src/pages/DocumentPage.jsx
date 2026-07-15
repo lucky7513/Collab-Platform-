@@ -340,7 +340,7 @@ export default function DocumentPage() {
               </div>
               <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16, padding: 2 }} onClick={() => setChatOpen(false)}>✕</button>
             </div>
-            <div style={{ flex: 1, overflow: 'auto', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ flex: 1, overflow: 'auto', minHeight: 0, WebkitOverflowScrolling: 'touch', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
               {chatMessages.length === 0 && (
                 <div style={{ textAlign: 'center', paddingTop: 32 }}>
                   <div style={{ fontSize: 32, marginBottom: 8 }}>👋</div>
@@ -388,7 +388,7 @@ export default function DocumentPage() {
               </div>
               <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16, padding: 2 }} onClick={() => setAiOpen(false)}>✕</button>
             </div>
-            <div style={{ flex: 1, overflow: 'auto', padding: '14px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ flex: 1, overflow: 'auto', minHeight: 0, WebkitOverflowScrolling: 'touch', padding: '14px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
               <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Select text in the editor, then choose an action:</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {[
