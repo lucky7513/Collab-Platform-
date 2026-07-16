@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+﻿import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import Quill from 'quill'
 import QuillCursors from 'quill-cursors'
@@ -115,10 +115,10 @@ export default function DocumentPage() {
             setOnlineUsers(msg.users || [])
           } else if (msg.type === 'user-joined') {
             setOnlineUsers(prev => [...prev, { userName: msg.userName, userColor: msg.userColor }])
-            showToast(msg.userName + ' joined ??', 'join')
+            showToast(msg.userName + ' joined 🟢', 'join')
           } else if (msg.type === 'user-left') {
             setOnlineUsers(prev => prev.filter(u => u.userName !== msg.userName))
-            showToast(msg.userName + ' left ??', 'leave')
+            showToast(msg.userName + ' left 🔴', 'leave')
           } else if (msg.type === 'doc-update' && msg.update) {
             const update = Uint8Array.from(atob(msg.update), c => c.charCodeAt(0))
             Y.applyUpdate(ydoc, update)
@@ -205,7 +205,7 @@ export default function DocumentPage() {
   }
 
   const saveStatusColor = saveStatus === 'saved' ? '#2ecc71' : saveStatus === 'saving' ? '#f39c12' : '#e74c3c'
-  const saveStatusText = saveStatus === 'saved' ? '? Saved' : saveStatus === 'saving' ? '? Saving...' : '? Unsaved'
+  const saveStatusText = saveStatus === 'saved' ? '✓ Saved' : saveStatus === 'saving' ? '⟳ Saving...' : '● Unsaved'
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg-primary)', fontFamily: 'Outfit, sans-serif' }}>
@@ -249,7 +249,7 @@ export default function DocumentPage() {
       <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', height: 52, background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)', flexShrink: 0, gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, overflow: 'hidden' }}>
           <button className="header-btn" style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 13, padding: '5px 10px', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 4 }} onClick={() => navigate('/dashboard')}>
-            ? Back
+            ← Back
           </button>
           <div style={{ width: 1, height: 20, background: 'var(--border)' }} />
           {editingTitle && !isViewer ? (
@@ -263,7 +263,7 @@ export default function DocumentPage() {
           )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
             {isViewer && (
-              <span style={{ fontSize: 11, background: 'rgba(243,156,18,0.15)', color: '#f39c12', border: '1px solid rgba(243,156,18,0.3)', borderRadius: 6, padding: '2px 8px', fontWeight: 600 }}>?? View Only</span>
+              <span style={{ fontSize: 11, background: 'rgba(243,156,18,0.15)', color: '#f39c12', border: '1px solid rgba(243,156,18,0.3)', borderRadius: 6, padding: '2px 8px', fontWeight: 600 }}>👁 View Only</span>
             )}
             {!isViewer && (
               <span style={{ fontSize: 11, color: saveStatusColor, fontWeight: 500 }}>{saveStatusText}</span>
@@ -291,7 +291,7 @@ export default function DocumentPage() {
           {/* Chat button */}
           <button className="header-btn" style={{ position: 'relative', background: chatOpen ? 'rgba(124,106,255,0.2)' : 'none', color: chatOpen ? '#7c6aff' : 'var(--text-secondary)', border: chatOpen ? '1px solid rgba(124,106,255,0.3)' : '1px solid transparent', borderRadius: 7, padding: '5px 10px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif', fontWeight: 500, transition: 'all 0.15s' }}
             onClick={() => { setChatOpen(!chatOpen); setAiOpen(false); setUnreadCount(0) }}>
-            ?? Chat
+            💬 Chat
             {unreadCount > 0 && (
               <span style={{ position: 'absolute', top: -5, right: -5, background: '#e74c3c', color: '#fff', borderRadius: '50%', width: 17, height: 17, fontSize: 9, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {unreadCount}
@@ -302,7 +302,7 @@ export default function DocumentPage() {
           {/* AI button */}
           <button className="header-btn" style={{ background: aiOpen ? 'rgba(124,106,255,0.2)' : 'none', color: aiOpen ? '#7c6aff' : 'var(--text-secondary)', border: aiOpen ? '1px solid rgba(124,106,255,0.3)' : '1px solid transparent', borderRadius: 7, padding: '5px 10px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif', fontWeight: 500, transition: 'all 0.15s' }}
             onClick={() => { setAiOpen(!aiOpen); setChatOpen(false) }}>
-            ?? AI
+            🤖 AI
           </button>
 
           {/* Share button */}
@@ -311,12 +311,12 @@ export default function DocumentPage() {
     document.title = title
     window.print()
   }}>
-  ?? Export PDF
+  📄 Export PDF
 </button>
           {myRole === 'OWNER' && (
             <button style={{ background: 'linear-gradient(135deg, #7c6aff, #5b4de8)', color: '#fff', border: 'none', borderRadius: 7, padding: '5px 12px', cursor: 'pointer', fontSize: 13, fontFamily: 'Outfit, sans-serif', fontWeight: 600, boxShadow: '0 2px 8px rgba(124,106,255,0.3)' }}
               onClick={() => api.post('/documents/' + id + '/generate-code').then(res => setCodeModal(res.data)).catch(() => alert('Failed to generate code'))}>
-              ?? Share
+              🔑 Share
             </button>
           )}
         </div>
@@ -334,16 +334,16 @@ export default function DocumentPage() {
           <aside style={{ width: 300, background: 'var(--bg-secondary)', borderLeft: '1px solid var(--border)', display: 'flex', flexDirection: 'column', overflow: 'hidden', flexShrink: 0 }}>
             <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 16 }}>??</span>
+                <span style={{ fontSize: 16 }}>💬</span>
                 <span style={{ fontWeight: 700, fontSize: 14 }}>Live Chat</span>
                 {onlineUsers.length > 0 && <span style={{ fontSize: 10, background: 'rgba(46,204,113,0.15)', color: '#2ecc71', border: '1px solid rgba(46,204,113,0.3)', borderRadius: 10, padding: '1px 6px' }}>{onlineUsers.length} online</span>}
               </div>
-              <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16, padding: 2 }} onClick={() => setChatOpen(false)}>?</button>
+              <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16, padding: 2 }} onClick={() => setChatOpen(false)}>✕</button>
             </div>
             <div style={{ flex: 1, overflow: 'auto', minHeight: 0, WebkitOverflowScrolling: 'touch', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
               {chatMessages.length === 0 && (
                 <div style={{ textAlign: 'center', paddingTop: 32 }}>
-                  <div style={{ fontSize: 32, marginBottom: 8 }}>??</div>
+                  <div style={{ fontSize: 32, marginBottom: 8 }}>👋</div>
                   <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>No messages yet. Say hi!</p>
                 </div>
               )}
@@ -373,7 +373,7 @@ export default function DocumentPage() {
                 onChange={e => setChatInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && sendChatMessage()}
               />
-              <button style={{ background: 'linear-gradient(135deg, #7c6aff, #5b4de8)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 13px', cursor: 'pointer', fontSize: 14, boxShadow: '0 2px 8px rgba(124,106,255,0.3)' }} onClick={sendChatMessage}>?</button>
+              <button style={{ background: 'linear-gradient(135deg, #7c6aff, #5b4de8)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 13px', cursor: 'pointer', fontSize: 14, boxShadow: '0 2px 8px rgba(124,106,255,0.3)' }} onClick={sendChatMessage}>➤</button>
             </div>
           </aside>
         )}
@@ -383,21 +383,21 @@ export default function DocumentPage() {
           <aside style={{ width: 300, background: 'var(--bg-secondary)', borderLeft: '1px solid var(--border)', display: 'flex', flexDirection: 'column', overflow: 'hidden', flexShrink: 0 }}>
             <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 16 }}>??</span>
+                <span style={{ fontSize: 16 }}>🤖</span>
                 <span style={{ fontWeight: 700, fontSize: 14 }}>AI Assistant</span>
               </div>
-              <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16, padding: 2 }} onClick={() => setAiOpen(false)}>?</button>
+              <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16, padding: 2 }} onClick={() => setAiOpen(false)}>✕</button>
             </div>
             <div style={{ flex: 1, overflow: 'auto', minHeight: 0, WebkitOverflowScrolling: 'touch', padding: '14px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
               <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Select text in the editor, then choose an action:</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {[
-                  { id: 'summarize', label: '?? Summarize', desc: 'Condense into key points' },
-                  { id: 'rephrase', label: '?? Rephrase', desc: 'Rewrite more clearly' },
-                  { id: 'continue', label: '?? Continue', desc: 'Generate next paragraph' },
-                  { id: 'grammar', label: '? Fix Grammar', desc: 'Correct errors' },
-                  { id: 'shorten', label: '?? Shorten', desc: 'Make it concise' },
-                  { id: 'bullets', label: '� Bulletize', desc: 'Convert to bullet list' },
+                  { id: 'summarize', label: '📋 Summarize', desc: 'Condense into key points' },
+                  { id: 'rephrase', label: '✏️ Rephrase', desc: 'Rewrite more clearly' },
+                  { id: 'continue', label: '➡️ Continue', desc: 'Generate next paragraph' },
+                  { id: 'grammar', label: '✓ Fix Grammar', desc: 'Correct errors' },
+                  { id: 'shorten', label: '✂️ Shorten', desc: 'Make it concise' },
+                  { id: 'bullets', label: '• Bulletize', desc: 'Convert to bullet list' },
                 ].map(action => (
                   <button key={action.id} className="ai-action-btn"
                     style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Outfit, sans-serif', display: 'flex', flexDirection: 'column', gap: 2, transition: 'all 0.15s' }}
@@ -415,26 +415,26 @@ export default function DocumentPage() {
                 </div>
               )}
 
-            </div>
-          </aside>
-        )}
-        {/* AI Result Panel */}
-        {aiResult && !aiLoading && (
-          <aside style={{ width: 340, background: 'var(--bg-secondary)', borderLeft: '1px solid var(--border)', display: 'flex', flexDirection: 'column', overflow: 'hidden', flexShrink: 0 }}>
-            <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontWeight: 700, fontSize: 14 }}>Result</span>
-              <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16, padding: 2 }} onClick={() => setAiResult('')}>X</button>
-            </div>
-            <div style={{ flex: 1, overflow: 'auto', minHeight: 0, WebkitOverflowScrolling: 'touch', padding: 16, fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap', color: 'var(--text-primary)' }}>{aiResult}</div>
-            <div style={{ display: 'flex', gap: 8, padding: '12px 16px', borderTop: '1px solid var(--border)' }}>
-              <button style={{ flex: 1, background: 'linear-gradient(135deg, #7c6aff, #5b4de8)', color: '#fff', border: 'none', borderRadius: 6, padding: '9px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}
-                onClick={() => { const quill = quillRef.current; if (quill) { const sel = quill.getSelection() || { index: quill.getLength(), length: 0 }; quill.insertText(sel.index + sel.length, '\n' + aiResult) } }}>
-                Insert
-              </button>
-              <button style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, padding: '9px 14px', fontSize: 13, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}
-                onClick={() => { navigator.clipboard.writeText(aiResult); setCopied(true); setTimeout(() => setCopied(false), 2000) }}>
-                {copied ? 'Copied' : 'Copy'}
-              </button>
+              {aiResult && !aiLoading && (
+                <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+                  <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)' }}>RESULT</span>
+                    <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 11 }} onClick={() => setAiResult('')}>✕ Clear</button>
+                  </div>
+               
+<div style={{ padding: 12, fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap', color: 'var(--text-primary)', height: 400, minHeight: 200, maxHeight: 600, overflow: 'auto', resize: 'vertical', WebkitOverflowScrolling: 'touch', touchAction: 'pan-y', border: '1px solid var(--border)', borderRadius: 6 }}>{aiResult}</div>
+                  <div style={{ display: 'flex', gap: 8, padding: '8px 12px', borderTop: '1px solid var(--border)' }}>
+                    <button style={{ flex: 1, background: 'linear-gradient(135deg, #7c6aff, #5b4de8)', color: '#fff', border: 'none', borderRadius: 6, padding: '7px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}
+                      onClick={() => { const quill = quillRef.current; if (quill) { const sel = quill.getSelection() || { index: quill.getLength(), length: 0 }; quill.insertText(sel.index + sel.length, '\n' + aiResult) } }}>
+                      Insert
+                    </button>
+                    <button style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, padding: '7px 12px', fontSize: 12, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}
+                      onClick={() => { navigator.clipboard.writeText(aiResult); setCopied(true); setTimeout(() => setCopied(false), 2000) }}>
+                      {copied ? '✓ Copied' : 'Copy'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </aside>
         )}
@@ -445,8 +445,8 @@ export default function DocumentPage() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
           <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 16, padding: 28, width: 360, display: 'flex', flexDirection: 'column', gap: 16, boxShadow: '0 24px 64px rgba(0,0,0,0.5)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, letterSpacing: '-0.3px' }}>?? Share Document</h3>
-              <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 18 }} onClick={() => setCodeModal(null)}>?</button>
+              <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, letterSpacing: '-0.3px' }}>🔑 Share Document</h3>
+              <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 18 }} onClick={() => setCodeModal(null)}>✕</button>
             </div>
             <p style={{ margin: 0, fontSize: 13, color: 'var(--text-muted)' }}>Share these codes with collaborators to give them access.</p>
 
@@ -455,7 +455,7 @@ export default function DocumentPage() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                 <span style={{ fontSize: 11, fontWeight: 700, color: '#7c6aff', letterSpacing: '0.08em' }}>EDITOR CODE</span>
                 <button style={{ background: 'rgba(124,106,255,0.15)', color: '#7c6aff', border: '1px solid rgba(124,106,255,0.3)', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: 'Outfit, sans-serif' }}
-                  onClick={() => { navigator.clipboard.writeText(codeModal.editor_code); alert('?? Editor code copied!') }}>Copy</button>
+                  onClick={() => { navigator.clipboard.writeText(codeModal.editor_code); alert('🔑 Editor code copied!') }}>Copy</button>
               </div>
               <p style={{ margin: 0, fontSize: 26, fontWeight: 800, letterSpacing: 6, fontFamily: 'monospace' }}>{codeModal.editor_code}</p>
               <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>Can edit and collaborate on the document</p>
@@ -466,7 +466,7 @@ export default function DocumentPage() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                 <span style={{ fontSize: 11, fontWeight: 700, color: '#f39c12', letterSpacing: '0.08em' }}>VIEWER CODE</span>
                 <button style={{ background: 'rgba(243,156,18,0.15)', color: '#f39c12', border: '1px solid rgba(243,156,18,0.3)', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: 'Outfit, sans-serif' }}
-                  onClick={() => { navigator.clipboard.writeText(codeModal.viewer_code); alert('?? Viewer code copied!') }}>Copy</button>
+                  onClick={() => { navigator.clipboard.writeText(codeModal.viewer_code); alert('👁 Viewer code copied!') }}>Copy</button>
               </div>
               <p style={{ margin: 0, fontSize: 26, fontWeight: 800, letterSpacing: 6, fontFamily: 'monospace' }}>{codeModal.viewer_code}</p>
               <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>Can only read the document</p>
