@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import Quill from 'quill'
 import QuillCursors from 'quill-cursors'
@@ -415,26 +415,26 @@ export default function DocumentPage() {
                 </div>
               )}
 
-              {aiResult && !aiLoading && (
-                <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
-                  <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)' }}>RESULT</span>
-                    <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 11 }} onClick={() => setAiResult('')}>✕ Clear</button>
-                  </div>
-               
-<div style={{ padding: 12, fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap', color: 'var(--text-primary)', height: 400, minHeight: 200, maxHeight: 600, overflow: 'auto', resize: 'vertical', WebkitOverflowScrolling: 'touch', touchAction: 'pan-y', border: '1px solid var(--border)', borderRadius: 6 }}>{aiResult}</div>
-                  <div style={{ display: 'flex', gap: 8, padding: '8px 12px', borderTop: '1px solid var(--border)' }}>
-                    <button style={{ flex: 1, background: 'linear-gradient(135deg, #7c6aff, #5b4de8)', color: '#fff', border: 'none', borderRadius: 6, padding: '7px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}
-                      onClick={() => { const quill = quillRef.current; if (quill) { const sel = quill.getSelection() || { index: quill.getLength(), length: 0 }; quill.insertText(sel.index + sel.length, '\n' + aiResult) } }}>
-                      Insert
-                    </button>
-                    <button style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, padding: '7px 12px', fontSize: 12, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}
-                      onClick={() => { navigator.clipboard.writeText(aiResult); setCopied(true); setTimeout(() => setCopied(false), 2000) }}>
-                      {copied ? '✓ Copied' : 'Copy'}
-                    </button>
-                  </div>
-                </div>
-              )}
+            </div>
+          </aside>
+        )}
+        {/* AI Result Panel */}
+        {aiResult && !aiLoading && (
+          <aside style={{ width: 340, background: 'var(--bg-secondary)', borderLeft: '1px solid var(--border)', display: 'flex', flexDirection: 'column', overflow: 'hidden', flexShrink: 0 }}>
+            <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontWeight: 700, fontSize: 14 }}>Result</span>
+              <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16, padding: 2 }} onClick={() => setAiResult('')}>X</button>
+            </div>
+            <div style={{ flex: 1, overflow: 'auto', minHeight: 0, WebkitOverflowScrolling: 'touch', padding: 16, fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap', color: 'var(--text-primary)' }}>{aiResult}</div>
+            <div style={{ display: 'flex', gap: 8, padding: '12px 16px', borderTop: '1px solid var(--border)' }}>
+              <button style={{ flex: 1, background: 'linear-gradient(135deg, #7c6aff, #5b4de8)', color: '#fff', border: 'none', borderRadius: 6, padding: '9px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}
+                onClick={() => { const quill = quillRef.current; if (quill) { const sel = quill.getSelection() || { index: quill.getLength(), length: 0 }; quill.insertText(sel.index + sel.length, '\n' + aiResult) } }}>
+                Insert
+              </button>
+              <button style={{ background: 'var(--bg-hover)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 6, padding: '9px 14px', fontSize: 13, cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}
+                onClick={() => { navigator.clipboard.writeText(aiResult); setCopied(true); setTimeout(() => setCopied(false), 2000) }}>
+                {copied ? 'Copied' : 'Copy'}
+              </button>
             </div>
           </aside>
         )}
