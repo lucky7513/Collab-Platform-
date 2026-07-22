@@ -17,9 +17,9 @@ PROMPTS = {
 async def process_text(action: str, text: str) -> str:
     if action not in PROMPTS:
         raise HTTPException(status_code=400, detail=f"Unknown action: {action}")
-
+    if len(text) > 6000:
+        text = text[:6000]
     prompt = PROMPTS[action] + text
-
     # Try Groq first (free)
     if settings.GROQ_API_KEY:
         return await _call_groq(prompt)
@@ -31,23 +31,30 @@ async def process_text(action: str, text: str) -> str:
     raise HTTPException(status_code=503, detail="No AI API key configured")
 
 
-async def _call_groq(prompt: str) -> str:
-    async with httpx.AsyncClient(timeout=30) as client:
-        response = await client.post(
-            "https://api.groq.com/openai/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {settings.GROQ_API_KEY}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "model": "openai/gpt-oss-20b",
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 1024,
-            }
-        )
-        response.raise_for_status()
-        return response.json()["choices"][0]["message"]["content"]
+import asyncio
 
+async def _call_groq(prompt: str, retries: int = 1) -> str:
+    async with httpx.AsyncClient(timeout=30) as client:
+        for attempt in range(retries + 1):
+            response = await client.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {settings.GROQ_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": "openai/gpt-oss-20b",
+                    "messages": [{"role": "user", "content": prompt}],
+                    "max_tokens": 1024,
+                }
+            )
+            if response.status_code == 429 and attempt < retries:
+                await asyncio.sleep(3)
+                continue
+            if response.status_code == 429:
+                raise HTTPException(status_code=429, detail="AI is busy right now. Please wait a few seconds and try again.")
+            response.raise_for_status()
+            return response.json()["choices"][0]["message"]["content"]
 
 async def _call_anthropic(prompt: str) -> str:
     async with httpx.AsyncClient(timeout=30) as client:
