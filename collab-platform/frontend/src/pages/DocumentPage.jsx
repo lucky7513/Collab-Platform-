@@ -70,16 +70,40 @@ export default function DocumentPage() {
   useEffect(() => {
     if (!editorRef.current || quillRef.current) return
 
+    const imageHandler = () => {
+      const input = document.createElement('input')
+      input.setAttribute('type', 'file')
+      input.setAttribute('accept', 'image/*')
+      input.click()
+      input.onchange = () => {
+        const file = input.files[0]
+        if (!file) return
+        if (file.size > 2 * 1024 * 1024) {
+          alert('Image too large. Please choose an image under 2MB.')
+          return
+        }
+        const reader = new FileReader()
+        reader.onload = () => {
+          const range = quill.getSelection(true)
+          quill.insertEmbed(range.index, 'image', reader.result, 'user')
+          quill.setSelection(range.index + 1)
+        }
+        reader.readAsDataURL(file)
+      }
+    }
     const quill = new Quill(editorRef.current, {
       modules: {
-        toolbar: [
-          [{ header: [1, 2, 3, false] }],
-          ['bold', 'italic', 'underline', 'strike'],
-          ['blockquote', 'code-block'],
-          [{ list: 'ordered' }, { list: 'bullet' }],
-          [{ color: [] }, { background: [] }],
-          ['link'], ['clean'],
-        ],
+       toolbar: {
+          container: [
+            [{ header: [1, 2, 3, false] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            ['blockquote', 'code-block'],
+            [{ list: 'ordered' }, { list: 'bullet' }],
+            [{ color: [] }, { background: [] }],
+            ['link', 'image'], ['clean'],
+          ],
+          handlers: { image: imageHandler },
+        },
         cursors: { transformOnTextChange: true },
         history: { userOnly: true },
       },
@@ -96,7 +120,7 @@ export default function DocumentPage() {
 
     api.get('/documents/' + id).then(res => {
       if (res.data.content && res.data.content.trim() && ytext.length === 0) {
-        ytext.insert(0, res.data.content)
+        quill.clipboard.dangerouslyPasteHTML(0, res.data.content)
       }
     })
 
@@ -152,7 +176,7 @@ export default function DocumentPage() {
       clearTimeout(saveTimerRef.current)
       saveTimerRef.current = setTimeout(() => {
         setSaveStatus('saving')
-        api.patch('/documents/' + id + '/content', { content: quill.getText() })
+        api.patch('/documents/' + id + '/content', { content: quill.root.innerHTML })
           .then(() => setSaveStatus('saved'))
           .catch(() => setSaveStatus('unsaved'))
       }, 2000)
