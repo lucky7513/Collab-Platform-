@@ -7,10 +7,8 @@ import { QuillBinding } from 'y-quill'
 import useAuthStore from '../store/authStore'
 import api from '../utils/api'
 import 'quill/dist/quill.snow.css'
-import ImageResize from 'quill-image-resize-module'
 
 Quill.register('modules/cursors', QuillCursors)
-Quill.register('modules/imageResize', ImageResize)
 
 export default function DocumentPage() {
   const { id } = useParams()
@@ -93,12 +91,9 @@ export default function DocumentPage() {
         reader.readAsDataURL(file)
       }
     }
-  const quill = new Quill(editorRef.current, {
+    const quill = new Quill(editorRef.current, {
       modules: {
-        imageResize: {
-          modules: ['Resize', 'DisplaySize'],
-        },
-        toolbar: {
+       toolbar: {
           container: [
             [{ header: [1, 2, 3, false] }],
             ['bold', 'italic', 'underline', 'strike'],
