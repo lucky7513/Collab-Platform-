@@ -161,13 +161,23 @@ export default function DocumentPage() {
 
     connectWS()
 
+      let pendingUpdates = []
+    let sendTimer = null
+
     ydoc.on('update', (update, origin) => {
       if (origin === 'remote') return
-      const ws = wsRef.current
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        const encoded = btoa(String.fromCharCode(...update))
-        ws.send(JSON.stringify({ type: 'doc-update', update: encoded }))
-      }
+      pendingUpdates.push(update)
+      if (sendTimer) return
+      sendTimer = setTimeout(() => {
+        const merged = Y.mergeUpdates(pendingUpdates)
+        pendingUpdates = []
+        sendTimer = null
+        const ws = wsRef.current
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          const encoded = btoa(String.fromCharCode(...merged))
+          ws.send(JSON.stringify({ type: 'doc-update', update: encoded }))
+        }
+      }, 60)
     })
 
     quill.on('text-change', (delta, oldDelta, source) => {
